@@ -39,7 +39,7 @@ TEST_CASE("Member invocation")
         });
         REQUIRE(executed);
     }
-    SUBCASE("using submit")
+    SUBCASE("using sender")
     {
         test::sender tx;
         p0443::execution::execute(tx, [&executed] {
@@ -47,4 +47,19 @@ TEST_CASE("Member invocation")
         });
         REQUIRE(executed);
     }
+}
+
+TEST_CASE("submit")
+{
+    struct receiver
+    {
+        bool set_value_called = false;
+        void set_value() {
+            set_value_called = true;
+        }
+    };
+    struct sender
+    {
+        void submit() {}
+    };
 }

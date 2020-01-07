@@ -50,7 +50,7 @@ public:
     {
         if (other.r_)
         {
-            try_init_(move_if_noexcept(*other.r_));
+            try_init_(std::move_if_noexcept(*other.r_));
             other.r_.reset();
         }
     }

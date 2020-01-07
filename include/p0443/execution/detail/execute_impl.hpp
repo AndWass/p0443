@@ -30,7 +30,7 @@ struct execute_impl
     template <typename Ex, typename Fn>
     void operator()(Ex &&ex, Fn &&fn) const {
         this->tagged_execute(std::forward<Ex>(ex), std::forward<Fn>(fn),
-                      execution_tag_t<execute_impl, Ex, Fn>{});
+                             execution_tag_t<execute_impl, Ex, Fn>{});
     }
 
 private:
@@ -42,11 +42,5 @@ private:
 
     template <typename Ex, typename Fn>
     void tagged_execute(Ex &&ex, Fn &&fn, tag_indirection) const;
-
-    /*template <typename Ex, typename Fn>
-    std::enable_if_t<use_free<Ex, Fn>> operator()(Ex && ex, Fn && fn) const;
-
-    template <typename Ex, typename Fn>
-    std::enable_if_t<use_submit<Ex, Fn>> operator()(Ex && ex, Fn && fn) const;*/
 };
 } // namespace p0443::execution::detail
