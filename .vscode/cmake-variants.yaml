@@ -1,0 +1,21 @@
+buildType:
+  default: debug
+  description: Debug build
+  choices:
+    debug:
+      short: Debug
+      long: Build with debugging information
+      buildType: Debug
+
+buildTests:
+  default: 'yes'
+  choices:
+    'yes':
+      short: Enable tests
+      long: Build all tests
+      settings:
+        P0443_BUILD_TESTS: yes
+    'no':
+      short: Disable tests
+      settings:
+        P0443_BUILD_TESTS: no
