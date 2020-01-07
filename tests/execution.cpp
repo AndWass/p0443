@@ -11,10 +11,11 @@ void execute(test_executor &ex, Fn&& fn) {
     fn();
 }
 
-struct receiver {
-    template<class T>
-    void submit(T && t) {
-        t.set_value();
+struct sender {
+    template<class Rx>
+    void submit(Rx&& t) {
+        const p0443::immediate_executor imm;
+        p0443::execution::submit(imm, std::forward<Rx>(t));
     }
 };
 }
@@ -40,8 +41,8 @@ TEST_CASE("Member invocation")
     }
     SUBCASE("using submit")
     {
-        test::receiver rx;
-        p0443::execution::execute(rx, [&executed] {
+        test::sender tx;
+        p0443::execution::execute(tx, [&executed] {
             executed = true;
         });
         REQUIRE(executed);

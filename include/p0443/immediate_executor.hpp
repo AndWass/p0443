@@ -7,8 +7,8 @@ namespace p0443
 struct immediate_executor
 {
     template<typename Fn>
-    void execute(Fn && fn) {
-        std::invoke(std::forward<Fn>(fn));
+    void execute(Fn && fn) const {
+        fn();
     }
 };
 }

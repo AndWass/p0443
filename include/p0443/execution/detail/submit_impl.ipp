@@ -1,24 +1,24 @@
 #pragma once
 
+#include <exception>
+
+#include "../../util/type_traits.hpp"
 #include "execute_impl.hpp"
 #include "submit_impl.hpp"
-#include "../../util/type_traits.hpp"
 
 namespace p0443::execution::detail
 {
-template <class Tx, class Rx>
-std::enable_if_t<submit_impl::use_member<Tx, Rx>> submit_impl::operator()(Tx && tx, Rx && rx) const
-{
+template <typename Tx, typename Rx>
+void submit_impl::tagged_submit(tag_member, Tx &&tx, Rx &&rx) const {
     std::forward<Tx>(tx).submit(std::forward<Rx>(rx));
 }
 
-template <class Tx, class Rx>
-std::enable_if_t<submit_impl::use_free<Tx, Rx>> submit_impl::operator()(Tx && tx, Rx && rx) const
-{
+template <typename Tx, typename Rx>
+void submit_impl::tagged_submit(tag_free, Tx &&tx, Rx &&rx) const {
     submit(std::forward<Tx>(tx), std::forward<Rx>(rx));
 }
 
-/*template <typename R>
+template <typename R>
 struct as_invocable
 {
 private:
@@ -33,14 +33,14 @@ private:
         }
         catch (...)
         {
-            execution::set_error(r, current_exception());
+            detail::set_error_impl{}(r, std::current_exception());
         }
     }
 
 public:
     explicit as_invocable(receiver_type &&r)
     {
-        try_init_(move_if_noexcept(r));
+        try_init_(std::move_if_noexcept(r));
     }
     explicit as_invocable(const receiver_type &r)
     {
@@ -57,25 +57,24 @@ public:
     ~as_invocable()
     {
         if (r_)
-            execution::set_done(*r_);
+            detail::set_done_impl{}(*r_);
     }
     void operator()()
     {
         try
         {
-            execution::set_value(*r_);
+            detail::set_value_impl{}(*r_);
         }
         catch (...)
         {
-            execution::set_error(*r_, current_exception());
+            detail::set_error_impl{}(*r_, std::current_exception());
         }
         r_.reset();
     }
 };
 
-template <class Tx, class Rx>
-std::enable_if_t<submit_impl::use_execute<Tx, Rx>> submit_impl::operator()(Tx && tx, Rx && rx) const
-{
+template <typename Tx, typename Rx>
+void submit_impl::tagged_submit(tag_indirection, Tx &&tx, Rx &&rx) const {
     execute_impl{}(std::forward<Tx>(tx), as_invocable<Rx>(std::forward<Rx>(rx)));
-}*/
 }
+} // namespace p0443::execution::detail

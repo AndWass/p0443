@@ -6,7 +6,6 @@ conan_basic_setup(TARGETS)
 
 add_library(p0443 INTERFACE)
 target_compile_features(p0443 INTERFACE cxx_std_17)
-target_link_libraries(p0443 INTERFACE CONAN_PKG::LEAF)
 
 include(GNUInstallDirs)
 
