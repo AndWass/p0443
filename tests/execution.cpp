@@ -1,7 +1,10 @@
 #include <p0443/execution/execution.hpp>
+#include <p0443/execution/executor_traits.hpp>
 #include <p0443/immediate_executor.hpp>
 
 #include <doctest/doctest.h>
+
+static_assert(p0443::execution::is_executor<p0443::immediate_executor>::value, "immediate_executor must model executor");
 
 namespace test
 {

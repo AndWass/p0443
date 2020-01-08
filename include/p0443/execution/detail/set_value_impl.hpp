@@ -26,8 +26,9 @@ struct set_value_impl
     template <typename Rx, typename... Args>
     static constexpr bool use_indirection = false;
 
-    template <typename Rx, typename... Args>
-    void operator()(Rx &&rx, Args &&... values) const {
+    template <typename Rx, typename... Args,
+              std::enable_if_t<use_member<Rx, Args...> || use_free<Rx, Args...>> * = nullptr>
+    void operator()(Rx && rx, Args &&... values) const {
         tagged_set_value(execution_tag_t<set_value_impl, Rx, Args...>{}, std::forward<Rx>(rx),
                          std::forward<Args>(values)...);
     }

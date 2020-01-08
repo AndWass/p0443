@@ -26,8 +26,8 @@ struct set_error_impl
     template <typename Rx, typename Err>
     static constexpr bool use_indirection = false;
 
-    template <typename Rx, typename Err>
-    void operator()(Rx &&rx, Err &&err) const {
+    template <typename Rx, typename Err, std::enable_if_t<use_member<Rx, Err> || use_free<Rx, Err>>* = nullptr>
+    void operator()(Rx &&rx, Err &&err) const noexcept {
         tagged_set_error(execution_tag_t<set_error_impl, Rx, Err>{}, std::forward<Rx>(rx),
                          std::forward<Err>(err));
     }

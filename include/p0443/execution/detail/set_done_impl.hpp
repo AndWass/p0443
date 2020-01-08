@@ -25,8 +25,8 @@ struct set_done_impl
     template <typename Rx>
     static constexpr bool use_indirection = false;
 
-    template <typename Rx>
-    void operator()(Rx &&rx) const {
+    template <typename Rx, std::enable_if_t<use_member<Rx> || use_free<Rx>>* = nullptr>
+    void operator()(Rx &&rx) const noexcept {
         tagged_set_done(execution_tag_t<set_done_impl, Rx>{}, std::forward<Rx>(rx));
     }
 

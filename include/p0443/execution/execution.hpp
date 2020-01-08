@@ -1,5 +1,4 @@
-#include <functional>
-
+#pragma once
 #include "detail/execution.hpp"
 
 namespace p0443
