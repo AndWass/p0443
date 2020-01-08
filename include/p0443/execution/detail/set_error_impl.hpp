@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "../../util/type_traits.hpp"
 #include "../../util/detect.hpp"
 #include "tag.hpp"
 
@@ -10,8 +11,8 @@ namespace p0443::execution::detail
 void set_error();
 struct set_error_impl
 {
-    template <typename Rx, typename Err>
-    using member_set_error_t = decltype(std::declval<Rx>().set_error(std::declval<Err>()));
+    template <typename Rx, typename Err, typename Noref = util::remove_cvref_t<Rx>>
+    using member_set_error_t = decltype(std::declval<Noref>().set_error(std::declval<Err>()));
 
     template <typename Rx, typename Err>
     using free_set_error_t = decltype(set_error(std::declval<Rx>(), std::declval<Err>()));

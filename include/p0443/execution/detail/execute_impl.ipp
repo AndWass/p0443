@@ -10,12 +10,12 @@ namespace p0443::execution::detail
 {
 template <typename Ex, typename Fn>
 void execute_impl::tagged_execute(Ex &&ex, Fn &&fn, tag_member) const {
-    ex.execute(util::decay_copy(std::forward<Fn>(fn)));
+    ex.execute(std::forward<Fn>(fn));
 }
 
 template <typename Ex, typename Fn>
 void execute_impl::tagged_execute(Ex &&ex, Fn &&fn, tag_free) const {
-    execute(std::forward<Ex>(ex), util::decay_copy(std::forward<Fn>(fn)));
+    execute(std::forward<Ex>(ex), std::forward<Fn>(fn));
 }
 
 template <typename Ex, typename Fn>

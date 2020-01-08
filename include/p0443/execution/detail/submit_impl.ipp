@@ -10,7 +10,7 @@ namespace p0443::execution::detail
 {
 template <typename Tx, typename Rx>
 void submit_impl::tagged_submit(tag_member, Tx &&tx, Rx &&rx) const {
-    std::forward<Tx>(tx).submit(std::forward<Rx>(rx));
+    tx.submit(std::forward<Rx>(rx));
 }
 
 template <typename Tx, typename Rx>
@@ -20,6 +20,6 @@ void submit_impl::tagged_submit(tag_free, Tx &&tx, Rx &&rx) const {
 
 template <typename Tx, typename Rx>
 void submit_impl::tagged_submit(tag_indirection, Tx &&tx, Rx &&rx) const {
-    execute_impl{}(std::forward<Tx>(tx), as_invocable<Rx>(std::forward<Rx>(rx)));
+    execute_impl{}(std::forward<Tx>(tx), as_invocable<util::remove_cvref_t<Rx>>(std::forward<Rx>(rx)));
 }
 } // namespace p0443::execution::detail

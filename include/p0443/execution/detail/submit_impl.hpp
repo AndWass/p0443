@@ -57,7 +57,7 @@ struct submit_impl
         }
     };
 
-    template <typename Tx, typename Rx, typename NoRef = std::remove_reference_t<Tx>>
+    template <typename Tx, typename Rx, typename NoRef = util::remove_cvref_t<Tx>>
     using member_submit_t = decltype(std::declval<NoRef>().submit(std::declval<Rx>()));
 
     template <typename Tx, typename Rx>

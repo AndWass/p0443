@@ -5,11 +5,17 @@
 #include "detail/set_done_impl.hpp"
 #include "detail/set_value_impl.hpp"
 #include "detail/set_error_impl.hpp"
+#include "../util/detect.hpp"
 
 #include <exception>
 
 namespace p0443::execution
 {
+namespace detail
+{
+
+}
+
 template<class T, class E = std::exception_ptr>
 using is_receiver = std::conjunction<
     std::is_move_constructible<util::remove_cvref_t<T>>,
