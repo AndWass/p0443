@@ -2,6 +2,9 @@ add_executable(p0443-tests
     main.cpp
     execution.cpp
     task.cpp
+    v2/tag_invoke.cpp
+    v2/submit.cpp
+    v2/transform.cpp
 )
 
 target_link_libraries(p0443-tests PRIVATE p0443
