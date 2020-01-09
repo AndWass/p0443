@@ -41,7 +41,7 @@ private:
     }
     template <class Receiver>
     void tagged_submit(Receiver &&rx, std::false_type) {
-        execution::execute(exec_, [recv = std::move_if_noexcept(rx), fun = std::move_if_noexcept(fun_)] mutable {
+        execution::execute(exec_, [recv = std::move_if_noexcept(rx), fun = std::move_if_noexcept(fun_)]() mutable {
             try {
                 execution::set_value(recv, fun());
             }

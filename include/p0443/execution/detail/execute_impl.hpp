@@ -4,6 +4,8 @@
 #include "../../util/detect.hpp"
 #include "tag.hpp"
 
+#include <functional>
+
 namespace p0443::execution::detail
 {
 void execute();
