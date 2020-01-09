@@ -51,7 +51,7 @@ namespace tag
 {
 template <class Receiver, class... Values>
 std::enable_if_t<p0443_v2::is_receiver_for_values_v<Receiver, Values...>>
-tag_invoke(Receiver &&rx, ::p0443_v2::tag::set_value_t, Values &&... err) {
+tag_invoke(Receiver &&rx, ::p0443_v2::tag::set_value_t, Values &&... values) {
     ::p0443_v2::set_value(std::forward<Receiver>(rx), std::forward<Values>(values)...);
 }
 } // namespace tag

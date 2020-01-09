@@ -1,8 +1,6 @@
 #pragma once
-
-#include "type_traits.hpp"
-
-#include "submit.hpp"
+#include <p0443_v2/type_traits.hpp>
+#include <p0443_v2/submit.hpp>
 
 #include <exception>
 #include <utility>
@@ -21,34 +19,32 @@ struct transform_op
     struct receiver
     {
         using receiver_type = p0443_v2::remove_cvref_t<Receiver>;
-        receiver_type receiver;
-        function_type fn;
+        receiver_type next_;
+        function_type fn_;
 
         template <class Rx, class Fn>
-        receiver(Rx &&rx, Fn &&fn)
-            : receiver(std::move_if_noexcept(std::forward<Rx>(rx))),
-              fn(std::move_if_noexcept(std::forward<Fn>(fn))) {
+        receiver(Rx &&rx, Fn &&fn) : next_(std::move_if_noexcept(std::forward<Rx>(rx))), fn_(fn) {
         }
 
         template <class... Values>
         std::enable_if_t<p0443_v2::is_receiver_for_values_v<Receiver, Values...>>
         set_value(Values &&... values) {
             try {
-                p0443_v2::set_value(receiver, values...);
-                fn(values...);
+                p0443_v2::set_value((receiver_type&&)next_, values...);
+                fn_(values...);
             }
             catch (...) {
-                p0443_v2::set_error(receiver, std::current_exception());
+                p0443_v2::set_error(next_, std::current_exception());
             }
         }
 
         void set_done() {
-            p0443_v2::set_done(receiver);
+            p0443_v2::set_done(next_);
         }
 
         template <class E>
         void set_error(E &&e) {
-            p0443_v2::set_error(receiver, e);
+            p0443_v2::set_error(next_, e);
         }
     };
 
@@ -57,8 +53,8 @@ struct transform_op
 
     template <class Receiver>
     void submit(Receiver &&rx) {
-        p0443_v2::submit(sender_, receiver<Receiver>(std::forward<Receiver>(rx),
-                                                     std::move_if_noexcept(function_)));
+        p0443_v2::submit((sender_type &&) sender_,
+                         receiver<Receiver>(std::forward<Receiver>(rx), function_));
     }
 
     template <class S, class Fn>
@@ -70,6 +66,7 @@ struct transform_op
 
 template <class Sender, class Function>
 auto transform(Sender &&sender, Function &&fn) {
-    return detail::transform_op<Sender, Function>(std::forward<Sender>(sender), std::forward<Function>(fn));
+    return detail::transform_op<Sender, Function>(std::forward<Sender>(sender),
+                                                  std::forward<Function>(fn));
 }
 } // namespace p0443_v2

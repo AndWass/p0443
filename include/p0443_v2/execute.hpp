@@ -79,7 +79,7 @@ struct execute_impl
     std::enable_if_t<use_submit<Executor, Function>::value>
     operator()(Executor && executor, Function && function) const {
         ::p0443_v2::tag_invoke(std::forward<Executor>(executor), ::p0443_v2::tag::submit,
-                               as_receiver(std::forward<Function>(function)));
+                               as_receiver<Function>(std::forward<Function>(function)));
     }
 };
 } // namespace detail
