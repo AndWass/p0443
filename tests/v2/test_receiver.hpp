@@ -20,7 +20,7 @@ struct test_receiver
 struct test_sender
 {
     template<class Receiver>
-    void submit(Receiver &rcv)
+    void submit(Receiver &&rcv)
     {
         rcv.set_value();
     }
