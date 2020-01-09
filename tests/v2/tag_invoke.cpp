@@ -26,7 +26,7 @@ void tag_invoke(test& t, tag_type<10>, int n)
 
 static_assert(p0443_v2::has_tag_invoke_member_function<test, tag_type<0>>::value, "bad has_tag_invoke_member trait");
 static_assert(p0443_v2::has_tag_invoke_member_function<test, tag_type<1>, bool>::value, "bad has_tag_invoke_member trait");
-static_assert(p0443_v2::has_tag_invoke_free_function<test, tag_type<10>, int>::value, "bad has_tag_invoke_free_function");
+static_assert(p0443_v2::has_tag_invoke_free_function<test&, tag_type<10>, int>::value, "bad has_tag_invoke_free_function");
 static_assert(!p0443_v2::has_tag_invoke_member_function<test, tag_type<100>, bool>::value, "bad has_tag_invoke_member trait");
 static_assert(!p0443_v2::has_tag_invoke_free_function<test, tag_type<101>, test>::value, "bad has_tag_invoke_free_function");
 
