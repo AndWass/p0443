@@ -30,21 +30,21 @@ TEST_CASE("sequence: test sequence") {
     int s3_n = 0;
     bool rx_shared = false;
 
-    auto s1 = p0443_v2::transform_before(test_sender(), [&] {
+    auto s1 = p0443_v2::transform(test_sender(), [&] {
         REQUIRE_FALSE(rx_shared);
         REQUIRE_FALSE(s2_called);
         s1_n = n++;
         s1_called = true;
     });
 
-    auto s2 = p0443_v2::transform_before(test_sender(), [&] {
+    auto s2 = p0443_v2::transform(test_sender(), [&] {
         REQUIRE(s1_called);
         REQUIRE_FALSE(rx_shared);
         s2_n = n++;
         s2_called = true;
     });
 
-    auto s3 = p0443_v2::transform_before(test_sender(), [&] {
+    auto s3 = p0443_v2::transform(test_sender(), [&] {
         REQUIRE_FALSE(rx_shared);
         s3_n = n++;
         s3_called = true;
@@ -74,9 +74,9 @@ TEST_CASE("when_any: basic functionality") {
 
     int counter = 0;
 
-    auto first = p0443_v2::transform_before(test_sender(), [&first_called]() { first_called = true; });
-    auto second = p0443_v2::transform_before(test_sender(), [&second_called]() { second_called = true; });
-    auto third = p0443_v2::transform_before(test_sender(), [&third_called]() { third_called = true; });
+    auto first = p0443_v2::transform(test_sender(), [&first_called]() { first_called = true; });
+    auto second = p0443_v2::transform(test_sender(), [&second_called]() { second_called = true; });
+    auto third = p0443_v2::transform(test_sender(), [&third_called]() { third_called = true; });
 
     auto transformed = p0443_v2::transform(p0443_v2::when_any(first, second, third), [&]() {
         REQUIRE(first_called);
@@ -102,14 +102,13 @@ TEST_CASE("when_any: with values functionality") {
 
     int counter = 0;
 
-    auto first = p0443_v2::transform_before(value_sender<int, int>(1, 2), [&first_called](int, int) { first_called = true; });
-    auto second = p0443_v2::transform_before(value_sender<int, int>(3, 4), [&second_called](int, int) { second_called = true; });
-    auto third = p0443_v2::transform_before(value_sender<int, int>(5, 6), [&third_called](auto&&...) { third_called = true; });
+    auto first = p0443_v2::transform(value_sender<int, int>(1, 2), [&first_called](int, int) { first_called = true; return 1; });
+    auto second = p0443_v2::transform(value_sender<int, int>(3, 4), [&second_called](int, int) { second_called = true; return 2; });
+    auto third = p0443_v2::transform(value_sender<int, int>(5, 6), [&third_called](auto&&...) { third_called = true; return 3; });
 
-    auto transformed = p0443_v2::transform(p0443_v2::when_any(first, second, third), [&](int a, int b) {
+    auto transformed = p0443_v2::transform(p0443_v2::when_any(first, second, third), [&](int n) {
+        REQUIRE(n == 1);
         REQUIRE(first_called);
-        REQUIRE(a == 1);
-        REQUIRE(b == 2);
         REQUIRE_FALSE(second_called);
         REQUIRE_FALSE(third_called);
         counter++;
@@ -132,9 +131,9 @@ TEST_CASE("when_all: basic functionality") {
 
     int counter = 0;
 
-    auto first = p0443_v2::transform_before(test_sender(), [&first_called]() { first_called = true; });
-    auto second = p0443_v2::transform_before(test_sender(), [&second_called]() { second_called = true; });
-    auto third = p0443_v2::transform_before(test_sender(), [&third_called]() { third_called = true; });
+    auto first = p0443_v2::transform(test_sender(), [&first_called]() { first_called = true; });
+    auto second = p0443_v2::transform(test_sender(), [&second_called]() { second_called = true; });
+    auto third = p0443_v2::transform(test_sender(), [&third_called]() { third_called = true; });
 
     auto transformed = p0443_v2::transform(p0443_v2::when_all(first, second, third), [&]() {
         REQUIRE(first_called);
@@ -161,13 +160,12 @@ TEST_CASE("when_all: with values") {
 
     int counter = 0;
 
-    auto first = p0443_v2::transform_before(value_sender<int, int>(1, 2), [&first_called](int, int) { first_called = true; });
-    auto second = p0443_v2::transform_before(value_sender<int, int>(3, 4), [&second_called](int, int) { second_called = true; });
-    auto third = p0443_v2::transform_before(value_sender<int, int>(10, 20), [&third_called](int, int) { third_called = true; });
+    auto first = p0443_v2::transform(value_sender<int, int>(1, 2), [&first_called](int, int) { first_called = true; return 1; });
+    auto second = p0443_v2::transform(value_sender<int, int>(3, 4), [&second_called](int, int) { second_called = true; return 2; });
+    auto third = p0443_v2::transform(value_sender<int, int>(10, 20), [&third_called](int, int) { third_called = true; return 3; });
 
-    auto transformed = p0443_v2::transform(p0443_v2::when_all(first, second, third), [&](int a, int b) {
-        REQUIRE(a == 10);
-        REQUIRE(b == 20);
+    auto transformed = p0443_v2::transform(p0443_v2::when_all(first, second, third), [&](int a) {
+        REQUIRE(a == 3);
         REQUIRE(first_called);
         REQUIRE(second_called);
         REQUIRE(third_called);

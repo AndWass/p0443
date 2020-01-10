@@ -8,6 +8,8 @@
 #include "test_receiver.hpp"
 #include <p0443_v2/make_receiver.hpp>
 #include <p0443_v2/make_sender.hpp>
+#include <p0443_v2/just.hpp>
+#include <p0443_v2/via.hpp>
 
 #include <iostream>
 
@@ -92,6 +94,28 @@ TEST_CASE("submit: make_receiver") {
     REQUIRE(set_done_called);
     REQUIRE(set_value_called);
     REQUIRE(set_error_called);
+}
+
+TEST_CASE("just: basic usage")
+{
+    int value = 0;
+    auto recv = p0443_v2::value_channel([&value](int val) {
+        value = val;
+    });
+
+    p0443_v2::submit(p0443_v2::just(10), recv);
+    REQUIRE(value == 10);
+}
+
+TEST_CASE("just: multiple values usage")
+{
+    int value = 0;
+    auto recv = p0443_v2::value_channel([&value](int val, std::string str) {
+        REQUIRE(val == 10);
+        REQUIRE(str == "hello");
+    });
+
+    p0443_v2::submit(p0443_v2::just(10, "hello"), recv);
 }
 
 } // namespace submit_test

@@ -75,30 +75,6 @@ using valid_tags = boost::mp11::mp_and<
     boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_error_tag>::value <= 1>,
     boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_value_tag>::value <= 1>>;
 
-struct done_fn
-{
-    template <class Fn, std::enable_if_t<std::is_invocable_v<Fn>> * = nullptr>
-    auto operator()(Fn && fn) const {
-        return make_receiver_tag_type<done_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn));
-    }
-};
-
-struct error_fn
-{
-    template <class Fn>
-    auto operator()(Fn && fn) const {
-        return make_receiver_tag_type<error_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn));
-    }
-};
-
-struct value_fn
-{
-    template <class Fn, std::enable_if_t<std::is_invocable_v<Fn>> * = nullptr>
-    auto operator()(Fn && fn) const {
-        return make_receiver_tag_type<value_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn));
-    }
-};
-
 template <class... Tags>
 struct receiver_impl
 {
@@ -167,6 +143,12 @@ auto operator+(const receiver_impl<Tags...> &lhs, const make_receiver_tag_type<N
     return std::apply(build_receiver_impl<Tags...,make_receiver_tag_type<N, ChannelValueType>>, std::tuple_cat(lhs.impls_, std::make_tuple(rhs)));
 }
 
+template<class...Tags, class...Tags2>
+auto operator+(const receiver_impl<Tags...> &lhs, const receiver_impl<Tags2...> &rhs)
+{
+    return std::apply(build_receiver_impl<Tags...,Tags2...>, std::tuple_cat(lhs.impls_, rhs.impls_));
+}
+
 struct make_receiver_fn
 {
     template <class... Tags>
@@ -182,6 +164,30 @@ auto operator+(const make_receiver_tag_type<N0, Type0> &lhs, const make_receiver
 {
     return make_receiver_fn{}(lhs, rhs);
 }
+
+struct done_fn
+{
+    template <class Fn, std::enable_if_t<std::is_invocable_v<Fn>> * = nullptr>
+    auto operator()(Fn && fn) const {
+        return build_receiver_impl(make_receiver_tag_type<done_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn)));
+    }
+};
+
+struct error_fn
+{
+    template <class Fn>
+    auto operator()(Fn && fn) const {
+        return build_receiver_impl(make_receiver_tag_type<error_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn)));
+    }
+};
+
+struct value_fn
+{
+    template <class Fn>
+    auto operator()(Fn && fn) const {
+        return build_receiver_impl(make_receiver_tag_type<value_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn)));
+    }
+};
 } // namespace make_receiver_detail
 
 constexpr make_receiver_detail::done_fn done_channel;

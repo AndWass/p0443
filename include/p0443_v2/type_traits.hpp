@@ -7,6 +7,12 @@
 
 namespace p0443_v2
 {
+
+template<class T>
+std::decay_t<T> decay_copy(T &&t) {
+    return std::forward<T>(t);
+}
+
 template <class T>
 struct remove_cvref
 { typedef std::remove_cv_t<std::remove_reference_t<T>> type; };
