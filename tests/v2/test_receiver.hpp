@@ -1,5 +1,10 @@
 #pragma once
 
+#include <memory>
+
+#include <tuple>
+#include <p0443_v2/set_value.hpp>
+
 struct test_receiver
 {
     bool submitted = false;
@@ -17,11 +22,77 @@ struct test_receiver
     }
 };
 
+struct counting_receiver
+{
+    struct counters_type
+    {
+        int set_value = 0;
+        int set_done = 0;
+        int set_error = 0;
+    };
+
+    std::shared_ptr<counters_type> counters{std::make_shared<counters_type>()};
+
+    template<class...Values>
+    void set_value(Values&&...values) {
+        counters->set_value++;
+    }
+
+    void set_done() {
+        counters->set_done++;
+    }
+
+    template<class E>
+    void set_error(E &&e) {
+        counters->set_error++;
+    }
+};
+
 struct test_sender
 {
     template<class Receiver>
     void submit(Receiver &&rcv)
     {
-        rcv.set_value();
+        p0443_v2::set_value(rcv);
+    }
+};
+
+struct conditional_sender
+{
+    bool should_set_value = false;
+    explicit conditional_sender(bool b): should_set_value(b) {}
+
+    template<class Receiver>
+    void submit(Receiver &&recv) {
+        if(should_set_value) {
+            p0443_v2::set_value(recv);
+        }
+    }
+};
+
+template<class...Values>
+struct value_sender
+{
+    std::tuple<std::decay_t<Values>...> val_;
+
+    template<class...Vs>
+    value_sender(Vs&&... v): val_(std::forward<Vs>(v)...) {}
+
+    template<class Receiver>
+    void submit(Receiver &&recv) {
+        auto all_values = std::tuple_cat(std::forward_as_tuple(std::forward<Receiver>(recv)), val_);
+        std::apply(p0443_v2::set_value, std::move(all_values));
+    }
+};
+
+template<class Value>
+struct value_sender<Value>
+{
+    Value val_;
+    value_sender(Value v): val_(v) {}
+
+    template<class Receiver>
+    void submit(Receiver &&recv) {
+        p0443_v2::set_value(recv, val_);
     }
 };
