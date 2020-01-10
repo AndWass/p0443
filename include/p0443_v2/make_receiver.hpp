@@ -1,0 +1,191 @@
+#pragma once
+
+#include <boost/mp11/algorithm.hpp>
+#include <type_traits>
+
+namespace p0443_v2
+{
+namespace make_receiver_detail
+{
+template <unsigned N, class ValueType>
+struct make_receiver_tag_type
+{
+    using value_type = std::decay_t<ValueType>;
+    constexpr static unsigned tag_value = N;
+    value_type value;
+
+    template <class Fn>
+    make_receiver_tag_type(Fn &&fn) : value(fn) {
+    }
+
+    template<class...Values>
+    void operator()(Values&&...values) {
+        value(std::forward<Values>(values)...);
+    }
+};
+
+constexpr unsigned done_tag_value = 0;
+constexpr unsigned error_tag_value = 1;
+constexpr unsigned value_tag_value = 2;
+
+template <class T>
+struct is_tag_type : std::false_type
+{};
+
+template <unsigned N, class T>
+struct is_tag_type<make_receiver_tag_type<N, T>> : std::true_type
+{};
+
+template <class T1, class T2>
+using tag_less = std::bool_constant < T1::tag_value<T2::tag_value>;
+
+template <class T1, class T2>
+using tag_equal = std::bool_constant<T1::tag_value == T2::tag_value>;
+
+template <class T>
+using tag_valid = std::bool_constant<T::tag_value <= value_tag_value>;
+
+template <class T, int N>
+using is_tag = std::conjunction<is_tag_type<T>, std::bool_constant<T::tag_value == N>>;
+
+template <class T>
+using is_done_tag = is_tag<T, done_tag_value>;
+
+template <class T>
+using is_error_tag = is_tag<T, error_tag_value>;
+
+template <class T>
+using is_value_tag = is_tag<T, value_tag_value>;
+
+template <class Tags>
+using has_error_tag =
+    boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_error_tag>::value == 1>;
+
+template <class Tags>
+using has_done_tag = boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_done_tag>::value == 1>;
+
+template <class Tags>
+using has_value_tag =
+    boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_value_tag>::value == 1>;
+
+template <class Tags>
+using valid_tags = boost::mp11::mp_and<
+    boost::mp11::mp_all_of<Tags, tag_valid>,
+    boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_done_tag>::value <= 1>,
+    boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_error_tag>::value <= 1>,
+    boost::mp11::mp_bool<boost::mp11::mp_count_if<Tags, is_value_tag>::value <= 1>>;
+
+struct done_fn
+{
+    template <class Fn, std::enable_if_t<std::is_invocable_v<Fn>> * = nullptr>
+    auto operator()(Fn && fn) const {
+        return make_receiver_tag_type<done_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn));
+    }
+};
+
+struct error_fn
+{
+    template <class Fn>
+    auto operator()(Fn && fn) const {
+        return make_receiver_tag_type<error_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn));
+    }
+};
+
+struct value_fn
+{
+    template <class Fn, std::enable_if_t<std::is_invocable_v<Fn>> * = nullptr>
+    auto operator()(Fn && fn) const {
+        return make_receiver_tag_type<value_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn));
+    }
+};
+
+template <class... Tags>
+struct receiver_impl
+{
+    using tag_list = boost::mp11::mp_list<std::decay_t<Tags>...>;
+    std::tuple<std::decay_t<Tags>...> impls_;
+
+    template<class...Ts>
+    receiver_impl(Ts&&... ts): impls_(std::forward<Ts>(ts)...) {}
+
+    template <class... Values>
+    void set_value(Values &&... values) {
+        this->tagged_value(has_value_tag<tag_list>{}, std::forward<Values>(values)...);
+    }
+
+    void set_done() {
+        this->tagged_done<boost::mp11::mp_find_if<tag_list, is_done_tag>::value>(
+            has_done_tag<tag_list>{});
+    }
+
+    template <class E>
+    void set_error(E &&err) {
+        this->tagged_error(has_error_tag<tag_list>{}, std::forward<E>(err));
+    }
+
+private:
+    template <class... Values>
+    void tagged_value(std::false_type, Values &&... values) {
+    }
+
+    template <class... Values>
+    void tagged_value(std::true_type, Values &&... values) {
+        std::get<boost::mp11::mp_find_if<tag_list, is_value_tag>::value>(impls_)(
+            std::forward<Values>(values)...);
+    }
+
+    template <class E>
+    void tagged_error(std::false_type, E &&err) {
+        std::terminate();
+    }
+
+    template <class E>
+    void tagged_error(std::true_type, E &&err) {
+        std::get<boost::mp11::mp_find_if<tag_list, is_error_tag>::value>(impls_)(
+            std::forward<E>(err));
+    }
+
+    template <std::size_t N>
+    void tagged_done(std::false_type) {
+    }
+
+    template <std::size_t N>
+    void tagged_done(std::true_type) {
+        std::get<N>(impls_)();
+    }
+};
+
+template<class...Ts>
+auto build_receiver_impl(Ts&&...ts)
+{
+    return receiver_impl<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
+}
+
+template<class...Tags, unsigned N, class ChannelValueType>
+auto operator+(const receiver_impl<Tags...> &lhs, const make_receiver_tag_type<N, ChannelValueType> &rhs)
+{
+    return std::apply(build_receiver_impl<Tags...,make_receiver_tag_type<N, ChannelValueType>>, std::tuple_cat(lhs.impls_, std::make_tuple(rhs)));
+}
+
+struct make_receiver_fn
+{
+    template <class... Tags>
+    auto operator()(Tags &&... tags) const {
+        using tag_list = boost::mp11::mp_list<std::decay_t<Tags>...>;
+        static_assert(valid_tags<tag_list>::value, "Invalid tag detected");
+        return receiver_impl<Tags...>(std::forward<Tags>(tags)...);
+    }
+};
+
+template<unsigned N0, class Type0, unsigned N1, class Type1>
+auto operator+(const make_receiver_tag_type<N0, Type0> &lhs, const make_receiver_tag_type<N1, Type1> &rhs)
+{
+    return make_receiver_fn{}(lhs, rhs);
+}
+} // namespace make_receiver_detail
+
+constexpr make_receiver_detail::done_fn done_channel;
+constexpr make_receiver_detail::error_fn error_channel;
+constexpr make_receiver_detail::value_fn value_channel;
+constexpr make_receiver_detail::make_receiver_fn make_receiver;
+} // namespace p0443_v2
