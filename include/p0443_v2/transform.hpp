@@ -26,9 +26,9 @@ struct transform_op
     private:
         struct tag_helper
         {
-            template <class Receiver, class Function, class... Values>
-            std::enable_if_t<p0443_v2::is_receiver_for_values_v<Receiver>>
-            operator()(std::true_type, Receiver&& next, Function&& fn, Values&&...values)
+            template <class Recv, class Fn, class... Values>
+            std::enable_if_t<p0443_v2::is_receiver_for_values_v<Recv>>
+            operator()(std::true_type, Recv&& next, Fn&& fn, Values&&...values)
             {
                 try {
                     fn(std::forward<Values>(values)...);
@@ -39,9 +39,9 @@ struct transform_op
                 }
             }
 
-            template <class Receiver, class Function, class... Values>
-            std::enable_if_t<p0443_v2::is_receiver_for_values_v<Receiver, std::invoke_result_t<Function, Values...>>>
-            operator()(std::false_type, Receiver&& next, Function&& fn, Values&&...values)
+            template <class Recv, class Fn, class... Values>
+            std::enable_if_t<p0443_v2::is_receiver_for_values_v<Recv, std::invoke_result_t<Fn, Values...>>>
+            operator()(std::false_type, Recv&& next, Fn&& fn, Values&&...values)
             {
                 try {
                     p0443_v2::set_value((receiver_type&&)next, fn(std::forward<Values>(values)...));

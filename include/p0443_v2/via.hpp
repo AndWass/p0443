@@ -109,7 +109,7 @@ struct via_sender
             error_type error_;
 
             template <class Recv, class Err>
-            scheduled_done(Recv &&recv, Err &&err)
+            scheduled_error(Recv &&recv, Err &&err)
                 : receiver_(std::forward<Recv>(recv)), error_(std::forward<Err>(err)) {
             }
 
@@ -151,7 +151,7 @@ struct via_sender
 
     template <class Send, class Sched>
     via_sender(Send &&send, Sched &&sched)
-        : target_(std::forward<Send>(send)), scheduler_(std::forward<SChed>(sched)) {
+        : target_(std::forward<Send>(send)), scheduler_(std::forward<Sched>(sched)) {
     }
 
     template<class Receiver>

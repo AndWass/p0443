@@ -2,6 +2,7 @@
 
 #include <boost/mp11/algorithm.hpp>
 #include <type_traits>
+#include <tuple>
 
 namespace p0443_v2
 {
@@ -131,22 +132,27 @@ private:
     }
 };
 
-template<class...Ts>
-auto build_receiver_impl(Ts&&...ts)
+struct build_receiver_impl_fn
 {
-    return receiver_impl<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
-}
+    template<class...Ts>
+    auto operator()(Ts&&...ts) const
+    {
+        return receiver_impl<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
+    }
+};
+
+constexpr build_receiver_impl_fn build_receiver_impl;
 
 template<class...Tags, unsigned N, class ChannelValueType>
 auto operator+(const receiver_impl<Tags...> &lhs, const make_receiver_tag_type<N, ChannelValueType> &rhs)
 {
-    return std::apply(build_receiver_impl<Tags...,make_receiver_tag_type<N, ChannelValueType>>, std::tuple_cat(lhs.impls_, std::make_tuple(rhs)));
+    return std::apply(build_receiver_impl, std::tuple_cat(lhs.impls_, std::make_tuple(rhs)));
 }
 
 template<class...Tags, class...Tags2>
 auto operator+(const receiver_impl<Tags...> &lhs, const receiver_impl<Tags2...> &rhs)
 {
-    return std::apply(build_receiver_impl<Tags...,Tags2...>, std::tuple_cat(lhs.impls_, rhs.impls_));
+    return std::apply(build_receiver_impl, std::tuple_cat(lhs.impls_, rhs.impls_));
 }
 
 struct make_receiver_fn
