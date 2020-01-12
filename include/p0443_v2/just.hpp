@@ -4,6 +4,8 @@
 #include <p0443_v2/make_sender.hpp>
 #include <p0443_v2/set_value.hpp>
 
+#include <p0443_v2/sender_value_type.hpp>
+
 namespace p0443_v2
 {
 namespace detail
@@ -11,7 +13,7 @@ namespace detail
 template<class...Values>
 struct just_sender
 {
-    using value_type = std::tuple<std::decay_t<Values>...>;
+    using value_type = typename p0443_v2::sender_value_type_for<Values...>::type;
     value_type val_;
 
     template<class...Vs>
@@ -67,6 +69,21 @@ struct just_sender<Value>
     void submit(Receiver&& recv) && {
         try {
             p0443_v2::set_value(recv, std::move(val_));
+        }
+        catch(...) {
+            p0443_v2::set_error(recv, std::current_exception());
+        }
+    }
+};
+
+template<>
+struct just_sender<>
+{
+    using value_type = void;
+    template<class Receiver>
+    void submit(Receiver&& recv) {
+        try {
+            p0443_v2::set_value(recv);
         }
         catch(...) {
             p0443_v2::set_error(recv, std::current_exception());

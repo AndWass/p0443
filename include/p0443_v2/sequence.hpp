@@ -4,7 +4,11 @@
 #include <tuple>
 #include <utility>
 
-#include <p0443_v2/transform.hpp>
+#include <p0443_v2/sender_value_type.hpp>
+#include <p0443_v2/submit.hpp>
+#include <p0443_v2/set_value.hpp>
+#include <p0443_v2/set_error.hpp>
+#include <p0443_v2/set_done.hpp>
 
 namespace p0443_v2
 {
@@ -16,6 +20,7 @@ struct sequence_op;
 template <class S1, class S2>
 struct sequence_op<S1, S2>
 {
+    using value_type = typename sender_value_type<S2>::type;
     template <class Receiver>
     struct sequence_receiver
     {
@@ -37,6 +42,7 @@ struct sequence_op<S1, S2>
         }
 
         void set_done() {
+            p0443_v2::set_done((Receiver&&) recv_);
         }
         template <class E>
         void set_error(E &&e) {

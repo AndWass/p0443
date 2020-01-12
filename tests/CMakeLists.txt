@@ -5,6 +5,8 @@ add_executable(p0443-tests
     v2/tag_invoke.cpp
     v2/submit.cpp
     v2/transform.cpp
+    v2/sync_wait.cpp
+    v2/asio_executor.cpp
 )
 
 target_link_libraries(p0443-tests PRIVATE p0443
