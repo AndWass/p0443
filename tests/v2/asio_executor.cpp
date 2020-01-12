@@ -29,10 +29,12 @@ TEST_CASE("asio: resolver test")
 {
     boost::asio::io_context io;
     boost::asio::ip::tcp::resolver asio_resolver(io);
-    p0443_v2::asio::resolver resolver(asio_resolver, "www.google.se", "443");
+    p0443_v2::asio::resolver resolver(asio_resolver, "localhost", "80");
     p0443_v2::submit(resolver,
         p0443_v2::value_channel([](boost::asio::ip::tcp::resolver::results_type results) {
+            REQUIRE_FALSE(results.empty());
             for(auto res: results) {
+
                 std::cout << res.endpoint().address().to_string() << "\n";
             }
         }));
