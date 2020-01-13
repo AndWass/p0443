@@ -184,9 +184,11 @@ receiver();
 receiver();
 ```
 
-Note that there is no case of only `sender()`. A sender will never
-perform work without a receiver, even if the receiver does nothing it
-must still be present.
+1 and 2 are easy to see how they are related. I consider #3 to be
+basicly what happens when you do `exec::submit(exec::schedule(sender), receiver)`.
+
+I have yet to find something that can conceptualize a a single `sender()` call,
+but so far I have not been convinced.
 
 Closing thoughts
 ================
