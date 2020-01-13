@@ -18,12 +18,12 @@ Senders are the functions
 In the executors proposal, senders are the functions that will
 be run. Unlike normal functions, senders don't just have a single
 "return" value, they have (up to) 3: `value`, `error` and `done`.
+And they don't have to return their valules immediately.
 
 Conceptually a sender can be seen as a function with the 
 signature `result_channels sender_function();`.
 
-In the
-executor proposal these are called _channels_, and are not 
+In the executor proposal these are called _channels_, and are not 
 returned from the receiver in the classical sense.
 
 The `value` channel can contain any number of values (depending 
@@ -39,7 +39,7 @@ either call `sender.submit(receiver)` [1] if such a member
 function is found, call `submit(sender, receiver)` [2] if an 
 appropriate function is found via ADL (excluding 
 `exec::submit`), or call
-`exec::execute(sender, as_callable(receiver))` [3] (if this 
+`exec::execute(sender, as_invocable(receiver))` [3] (if this 
 is valid) which is yet another customization point.
 
 If neither [1], [2] nor [3] is valid then the call to 
@@ -50,8 +50,8 @@ allows the sender (or function) to actually start execution.
 
 Only through `exec::submit` will the `sender` know where 
 its results will go: the receiver of the function results is the 
-`receiver` object (TADA!). When the sender has performed its task
-(s) it must, _at some point_, call **one** of 
+`receiver` object (TADA!). When the sender has performed its task(s)
+it must, _at some point_, call **one** of 
 `exec::set_value(receiver, values...)`,
 `exec::set_done()` or `exec::set_error(error)`.
 
@@ -126,8 +126,9 @@ alter some shared state etc.
 So while the concept is simple, it encapsulates a very important piece of
 work; moving execution from one context to another.
 
-
-
+Schedulers have a requirement of either having a `schedule()` member
+function, or letting the `schedule(scheduler)` function be found via
+ADL. A third option is available for senders.
 
 Senders can be schedulers
 =========================
@@ -139,3 +140,63 @@ will simply cause `exec::schedule(sender)` to return sender again.
 
 And in this special-case `exec::submit(exec::schedule(sender), receiver)`
 is the same as `exec::submit(sender, receiver)`.
+
+Senders can be executors
+========================
+
+An executors job is to, at some point (again), execute the functions 
+given to it. The functions must take no arguments and return values are 
+ignored (or forbidden?).
+
+This is done through `exec::execute(executor, function);` which eventually
+must result in `function()` being called.
+
+As with all other parts of the proposal, `exec::execute(...)` is a
+customization point which will first use `executor.execute(function)`,
+if that doesn't work it will try to use ADL to call
+`execute(executor, function)`. Finally, if nothing else works, it will
+attempt to call `exec::submit(executor, as_receiver(function))`.
+
+now `as_receiver` is an implementation-defined class, but
+it has the requirement that `exec::set_value(as_receiver(function))`
+will call `function()`.
+
+So with this an executor can be a scheduler, and both schedulers and
+executors can be senders. And remember case number [3] of `exec::submit`:
+it will call `exec::execute(sender, as_invocable(receiver))`. This means
+that senders can be executors. But this also means that invocables can be
+receivers and receivers can be invocables.
+
+What is the meaning of all this
+===============================
+
+The mental model is a bit challenging, but it helps to keep in mind
+that a single sender receiver pair models either one of
+
+```
+receiver(sender()); // #1
+
+// #2
+sender();
+receiver();
+
+// #3
+receiver();
+```
+
+Note that there is no case of only `sender()`. A sender will never
+perform work without a receiver, even if the receiver does nothing it
+must still be present.
+
+Closing thoughts
+================
+
+I like the thought of having seperate channels, I often like to think in terms
+of dataflow and this encapsulates this. It allows for the relatively easy propogation of
+multiple values. I have, as a learning exercise, tried to implement some partial
+functionality and it was this expeirence that made it click for me. Just reading
+the paper was quite daunting. All in all I think it can be valuable.
+
+One thing I may experiment with is to allow `set_value` and `set_error` to
+return an optional error or something of the like. And see if I can do away with
+exceptions since they are problematic in my main field of work which is embedded.
