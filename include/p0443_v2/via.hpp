@@ -23,6 +23,7 @@ struct via_sender
         template <class Receiver, class... Values>
         struct scheduled_values
         {
+            static_assert(sizeof...(Values) > 0, "BUG: scheduled_values should not be used with empty value set");
             using next_receiver_type = std::decay_t<Receiver>;
             using value_type = std::tuple<std::decay_t<Values>...>;
 
@@ -39,30 +40,6 @@ struct via_sender
                     p0443_v2::set_value(this->receiver_, std::forward<decltype(values)>(values)...);
                 };
                 std::apply(caller, values_);
-            }
-
-            void set_done() {
-                p0443_v2::set_done(receiver_);
-            }
-
-            template <class E>
-            void set_error(E &&e) {
-                p0443_v2::set_error(receiver_, std::forward<E>(e));
-            }
-        };
-
-        template <class Receiver>
-        struct scheduled_values<Receiver>
-        {
-            using next_receiver_type = std::decay_t<Receiver>;
-            next_receiver_type receiver_;
-
-            template <class Recv>
-            explicit scheduled_values(Recv &&recv) : receiver_(std::forward<Recv>(recv)) {
-            }
-
-            void set_value() {
-                p0443_v2::set_value(receiver_);
             }
 
             void set_done() {
@@ -118,7 +95,7 @@ struct via_sender
             }
 
             void set_done() {
-                p0443_v2::set_error(receiver_, error_);
+                p0443_v2::set_done(receiver_);
             }
 
             template <class E>
@@ -134,8 +111,15 @@ struct via_sender
 
         template <class... Values>
         void set_value(Values &&... values) {
-            p0443_v2::submit(scheduler_, scheduled_values<NextReceiver, Values...>(
-                                             next_, std::forward<Values>(values)...));
+            if constexpr(sizeof...(Values) == 0)
+            {
+                p0443_v2::submit(scheduler_, next_);
+            }
+            else
+            {
+                p0443_v2::submit(scheduler_, scheduled_values<NextReceiver, Values...>(
+                                                 next_, std::forward<Values>(values)...));
+            }
         }
 
         void set_done() {

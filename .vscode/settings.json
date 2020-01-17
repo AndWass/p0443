@@ -83,5 +83,6 @@
         "strstream": "cpp",
         "valarray": "cpp",
         "xxatomic": "cpp"
-    }
+    },
+    "restructuredtext.confPath": ""
 }

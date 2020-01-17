@@ -33,7 +33,7 @@ struct handle_error_impl
             p0443_v2::set_value(out_receiver_, std::forward<Values>(values)...);
         }
         catch (...) {
-            p0443_v2::set_error(out_receiver_, std::current_exception());
+            this->set_error(std::current_exception());
         }
     }
 

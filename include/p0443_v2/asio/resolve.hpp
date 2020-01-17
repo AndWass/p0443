@@ -43,7 +43,7 @@ struct resolver
 
     resolver(boost::asio::ip::tcp::resolver &resolv, std::string_view host,
              std::string_view service)
-        : resolv_(&resolv), host_(host), service_(service) {
+        : resolv_(& resolv), host_(host), service_(service) {
     }
 
     boost::asio::ip::tcp::resolver *resolv_;
