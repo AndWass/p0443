@@ -95,46 +95,6 @@ TEST_CASE("submit: make_receiver") {
     REQUIRE(set_error_called);
 }
 
-TEST_CASE("submit: noncopyable sender")
-{
-    struct destruct_tracer {
-        ~destruct_tracer() {
-            if(destroyed_) {
-                *destroyed_ = true;
-            }
-        }
-        destruct_tracer(const destruct_tracer&) = delete;
-        destruct_tracer(destruct_tracer&& rhs) {
-            destroyed_ = rhs.destroyed_;
-            rhs.destroyed_ = nullptr;
-        }
-        destruct_tracer& operator=(destruct_tracer&& rhs) {
-            if(this != &rhs) {
-                destroyed_ = rhs.destroyed_;
-                rhs.destroyed_ = nullptr;
-            }
-            return *this;
-        }
-
-        destruct_tracer(bool& destroyed): destroyed_(&destroyed)  {
-            *destroyed_ = false;
-        }
-        bool *destroyed_;
-    };
-    static_assert(!std::is_copy_constructible_v<destruct_tracer> && !std::is_copy_assignable_v<destruct_tracer>, "destruct tracer must be noncopyable");
-    static_assert(std::is_move_constructible_v<destruct_tracer> && std::is_move_assignable_v<destruct_tracer>, "destruct tracer must be movable");
-    bool destroyed = false;
-    auto sender = p0443_v2::make_sender([val = destruct_tracer(destroyed)](auto &&recv) {
-        p0443_v2::set_value(std::forward<decltype(recv)>(recv));
-    });
-
-    REQUIRE_FALSE(destroyed);
-    p0443_v2::submit(sender, test_receiver{});
-    REQUIRE_FALSE(destroyed);
-    p0443_v2::submit(std::move(sender), test_receiver{});
-    REQUIRE(destroyed);
-}
-
 TEST_CASE("just: basic usage")
 {
     int value = 0;

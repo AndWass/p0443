@@ -1,5 +1,8 @@
 #pragma once
 
+#include <utility>
+#include <p0443_v2/type_traits.hpp>
+
 #include <boost/mp11/algorithm.hpp>
 #include <type_traits>
 #include <tuple>
@@ -16,7 +19,7 @@ struct make_receiver_tag_type
     value_type value;
 
     template <class Fn>
-    make_receiver_tag_type(Fn &&fn) : value(fn) {
+    make_receiver_tag_type(std::in_place_t, Fn &&fn) : value(std::forward<Fn>(fn)) {
     }
 
     template<class...Values>
@@ -83,7 +86,9 @@ struct receiver_impl
     std::tuple<std::decay_t<Tags>...> impls_;
 
     template<class...Ts>
-    receiver_impl(Ts&&... ts): impls_(std::forward<Ts>(ts)...) {}
+    receiver_impl(std::in_place_t, Ts&&... ts): impls_(std::forward<Ts>(ts)...) {
+        static_assert(valid_tags<tag_list>::value, "Not all tags are valid");
+    }
 
     template <class... Values>
     void set_value(Values &&... values) {
@@ -137,7 +142,7 @@ struct build_receiver_impl_fn
     template<class...Ts>
     auto operator()(Ts&&...ts) const
     {
-        return receiver_impl<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
+        return receiver_impl<std::decay_t<Ts>...>(std::in_place, std::forward<Ts>(ts)...);
     }
 };
 
@@ -175,7 +180,7 @@ struct done_fn
 {
     template <class Fn, std::enable_if_t<std::is_invocable_v<Fn>> * = nullptr>
     auto operator()(Fn && fn) const {
-        return build_receiver_impl(make_receiver_tag_type<done_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn)));
+        return build_receiver_impl(make_receiver_tag_type<done_tag_value, std::decay_t<Fn>>(std::in_place, std::forward<Fn>(fn)));
     }
 };
 
@@ -183,7 +188,7 @@ struct error_fn
 {
     template <class Fn>
     auto operator()(Fn && fn) const {
-        return build_receiver_impl(make_receiver_tag_type<error_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn)));
+        return build_receiver_impl(make_receiver_tag_type<error_tag_value, std::decay_t<Fn>>(std::in_place, std::forward<Fn>(fn)));
     }
 };
 
@@ -191,7 +196,7 @@ struct value_fn
 {
     template <class Fn>
     auto operator()(Fn && fn) const {
-        return build_receiver_impl(make_receiver_tag_type<value_tag_value, std::decay_t<Fn>>(std::forward<Fn>(fn)));
+        return build_receiver_impl(make_receiver_tag_type<value_tag_value, std::decay_t<Fn>>(std::in_place, std::forward<Fn>(fn)));
     }
 };
 } // namespace make_receiver_detail

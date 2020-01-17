@@ -102,8 +102,14 @@ struct when_all_op
 };
 } // namespace detail
 
+template<class S>
+auto when_all(S &&sender) {
+    return std::forward<S>(sender);
+}
+
 template <class... Senders>
 auto when_all(Senders &&... senders) {
+    static_assert(sizeof...(Senders) > 0, "when_all must take at least 1 sender");
     return detail::when_all_op<Senders...>(std::forward<Senders>(senders)...);
 }
 } // namespace p0443_v2

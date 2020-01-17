@@ -14,7 +14,7 @@ struct sender_impl
     submit_fn_type submit_;
 
     template<class Fn>
-    sender_impl(Fn &&fn): submit_(std::forward<Fn>(fn)) {}
+    explicit sender_impl(std::in_place_t, Fn &&fn): submit_(std::forward<Fn>(fn)) {}
 
     template<class Receiver>
     void submit(Receiver &&recv) {
@@ -26,7 +26,7 @@ struct make_sender_fn
 {
     template <class Submit>
     auto operator()(Submit&& submitfn) const {
-        return sender_impl<Submit>(std::forward<Submit>(submitfn));
+        return sender_impl<Submit>(std::in_place, std::forward<Submit>(submitfn));
     }
 };
 } // namespace make_sender_detail

@@ -30,7 +30,7 @@ struct via_sender
             value_type values_;
 
             template <class Recv, class... Vs>
-            scheduled_values(Recv &&recv, Vs &&... vs)
+            explicit scheduled_values(Recv &&recv, Vs &&... vs)
                 : receiver_(std::forward<Recv>(recv)), values_(std::forward<Vs>(vs)...) {
             }
 
@@ -58,7 +58,7 @@ struct via_sender
             next_receiver_type receiver_;
 
             template <class Recv>
-            scheduled_values(Recv &&recv) : receiver_(std::forward<Recv>(recv)) {
+            explicit scheduled_values(Recv &&recv) : receiver_(std::forward<Recv>(recv)) {
             }
 
             void set_value() {
@@ -82,7 +82,7 @@ struct via_sender
             next_receiver_type receiver_;
 
             template <class Recv>
-            scheduled_done(Recv &&recv) : receiver_(std::forward<Recv>(recv)) {
+            explicit scheduled_done(Recv &&recv) : receiver_(std::forward<Recv>(recv)) {
             }
 
             void set_value() {
@@ -129,6 +129,9 @@ struct via_sender
 
         std::decay_t<NextReceiver> next_;
 
+        template<class NR>
+        explicit via_receiver(std::in_place_t, NR &&next): next_(std::forward<NR>(next)) {}
+
         template <class... Values>
         void set_value(Values &&... values) {
             p0443_v2::submit(scheduler_, scheduled_values<NextReceiver, Values...>(
@@ -156,7 +159,7 @@ struct via_sender
 
     template<class Receiver>
     void submit(Receiver &&recv) {
-        p0443_v2::submit(target_, via_receiver<Receiver>(std::forward<Receiver>(recv)));
+        p0443_v2::submit(target_, via_receiver<Receiver>(std::in_place, std::forward<Receiver>(recv)));
     }
 };
 

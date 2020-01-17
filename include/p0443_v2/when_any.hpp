@@ -81,7 +81,7 @@ struct when_any_op
     senders_storage senders_;
 
     template<class...Tx>
-    when_any_op(Tx &&...tx): senders_(std::forward<Tx>(tx)...) {}
+    explicit when_any_op(std::in_place_t, Tx &&...tx): senders_(std::forward<Tx>(tx)...) {}
 
     template<class Receiver>
     void submit(Receiver&& rx) {
@@ -93,8 +93,14 @@ struct when_any_op
 };
 }
 
+template<class Sender>
+auto when_any(Sender&& sender) {
+    return std::forward<Sender>(sender);
+}
+
 template<class...Senders>
 auto when_any(Senders&&...senders) {
-    return detail::when_any_op<Senders...>(std::forward<Senders>(senders)...);
+    static_assert(sizeof...(Senders) > 0, "when_any must take at least 1 sender");
+    return detail::when_any_op<Senders...>(std::in_place, std::forward<Senders>(senders)...);
 }
 }

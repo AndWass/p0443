@@ -52,8 +52,8 @@ struct just_sender<Value>
     using value_type = std::decay_t<Value>;
     value_type val_;
 
-    template<class Vs>
-    just_sender(Vs&& v): val_(std::forward<Vs>(v)) {}
+    template<class Vs, std::enable_if_t<std::is_constructible_v<value_type, Vs>>* = nullptr>
+    explicit just_sender(Vs&& v): val_(std::forward<Vs>(v)) {}
 
     template<class Receiver>
     void submit(Receiver&& recv) & {
