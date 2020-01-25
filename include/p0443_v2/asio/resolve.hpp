@@ -13,7 +13,7 @@ namespace p0443_v2::asio
 {
 namespace detail
 {
-struct resolver
+struct resolve
 {
     using value_type = boost::asio::ip::tcp::resolver::results_type;
     template <class Receiver>
@@ -39,9 +39,9 @@ struct resolver
         return p0443_v2::asio::executor(*resolv_);
     }
 
-    resolver() = default;
+    resolve() = default;
 
-    resolver(boost::asio::ip::tcp::resolver &resolv, std::string_view host,
+    resolve(boost::asio::ip::tcp::resolver &resolv, std::string_view host,
              std::string_view service)
         : resolv_(& resolv), host_(host), service_(service) {
     }
@@ -50,5 +50,5 @@ struct resolver
     std::string host_, service_;
 };
 } // namespace detail
-using resolver = detail::resolver;
+using resolve = detail::resolve;
 } // namespace p0443_v2::asio

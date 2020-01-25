@@ -14,7 +14,6 @@
 TEST_CASE("asio: executor basic functionality")
 {
     boost::asio::io_context io;
-    boost::asio::ip::tcp::resolver resolver(io);
 
     bool fn_called = false;
     p0443_v2::execute(p0443_v2::asio::executor(io), [&]() {
@@ -29,8 +28,8 @@ TEST_CASE("asio: resolver test")
 {
     boost::asio::io_context io;
     boost::asio::ip::tcp::resolver asio_resolver(io);
-    p0443_v2::asio::resolver resolver(asio_resolver, "localhost", "80");
-    p0443_v2::submit(resolver,
+    p0443_v2::asio::resolve resolve(asio_resolver, "localhost", "80");
+    p0443_v2::submit(resolve,
         p0443_v2::value_channel([](boost::asio::ip::tcp::resolver::results_type results) {
             REQUIRE_FALSE(results.empty());
             for(auto res: results) {
@@ -40,7 +39,7 @@ TEST_CASE("asio: resolver test")
         }));
         
     bool is_run = false;
-    p0443_v2::submit(p0443_v2::schedule(resolver), p0443_v2::value_channel([&is_run] {
+    p0443_v2::submit(p0443_v2::schedule(resolve), p0443_v2::value_channel([&is_run] {
         is_run = true;
     }));
     REQUIRE_FALSE(is_run);

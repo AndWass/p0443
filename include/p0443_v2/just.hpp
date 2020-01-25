@@ -17,7 +17,7 @@ struct just_sender
     value_type val_;
 
     template<class...Vs>
-    just_sender(Vs&&...v): val_(std::forward<Vs>(v)...) {}
+    just_sender(std::in_place_t, Vs&&...v): val_(std::forward<Vs>(v)...) {}
 
     template<class Receiver>
     void submit(Receiver&& recv) & {
@@ -53,7 +53,7 @@ struct just_sender<Value>
     value_type val_;
 
     template<class Vs, std::enable_if_t<std::is_constructible_v<value_type, Vs>>* = nullptr>
-    explicit just_sender(Vs&& v): val_(std::forward<Vs>(v)) {}
+    explicit just_sender(std::in_place_t, Vs&& v): val_(std::forward<Vs>(v)) {}
 
     template<class Receiver>
     void submit(Receiver&& recv) & {
@@ -80,6 +80,9 @@ template<>
 struct just_sender<>
 {
     using value_type = void;
+
+    just_sender(std::in_place_t) {}
+
     template<class Receiver>
     void submit(Receiver&& recv) {
         try {
@@ -93,6 +96,6 @@ struct just_sender<>
 }
 
 constexpr auto just = [](auto&&...value) {
-    return detail::just_sender<decltype(value)...>(std::forward<decltype(value)>(value)...);
+    return detail::just_sender<decltype(value)...>(std::in_place, std::forward<decltype(value)>(value)...);
 };
 }

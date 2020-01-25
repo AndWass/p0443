@@ -6,8 +6,10 @@ add_executable(p0443-tests
     v2/submit.cpp
     v2/transform.cpp
     v2/sync_wait.cpp
+    v2/let.cpp
     v2/asio_executor.cpp
     v2/handle_error.cpp
+    v2/asio_connect.cpp
 )
 
 target_link_libraries(p0443-tests PRIVATE p0443
