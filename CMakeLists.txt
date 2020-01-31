@@ -32,3 +32,7 @@ if(P0443_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+if(P0443_BUILD_SAMPLES)
+    add_subdirectory(samples)
+endif()
+

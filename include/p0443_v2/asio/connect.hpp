@@ -26,6 +26,9 @@ struct connect
     };
     std::variant<endpoint_range, const resolver_results*> endpoints_;
 
+    using value_types = std::variant<endpoint_type>;
+    using error_types = std::variant<std::exception_ptr>;
+
     connect(boost::asio::basic_socket<Protocol, Executor> &socket, resolver_results &resolve_results):
         socket_(&socket), endpoints_{&resolve_results} {}
 

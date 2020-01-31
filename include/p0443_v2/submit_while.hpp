@@ -17,7 +17,7 @@ struct submit_while_sender
     using predicate_type = p0443_v2::remove_cvref_t<Predicate>;
 
     template <class Receiver>
-    struct receiver
+    struct receiver_t
     {
         using receiver_type = p0443_v2::remove_cvref_t<Receiver>;
 
@@ -26,7 +26,7 @@ struct submit_while_sender
         receiver_type target_;
 
         template <class S, class P, class R>
-        receiver(S &&sender, P &&predicate, R &&target)
+        receiver_t(S &&sender, P &&predicate, R &&target)
             : sender_(std::forward<S>(sender)), predicate_(std::forward<P>(predicate)),
               target_(std::forward<R>(target)) {
         }
@@ -37,10 +37,10 @@ struct submit_while_sender
                 bool predicate_result = predicate_(values...);
 
                 if (predicate_result) {
-                    p0443_v2::submit(sender_, receiver<Receiver>(*this));
+                    p0443_v2::submit(sender_, receiver_t<Receiver>(*this));
                 }
                 else {
-                    p0443_v2::set_value(target_, std::forward<Values>(values...));
+                    p0443_v2::set_value(target_, std::forward<Values>(values)...);
                 }
             }
             catch (...) {
@@ -69,8 +69,8 @@ struct submit_while_sender
     template <class Receiver>
     void submit(Receiver &&receiver) {
         p0443_v2::submit(sender_,
-                         receiver<Receiver>(sender_, predicate_,
-                                            std::forward<Receiver>(sender_, predicate_, receiver)));
+                         receiver_t<Receiver>(sender_, predicate_,
+                                            std::forward<Receiver>(receiver)));
     }
 };
 

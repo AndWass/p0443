@@ -23,7 +23,7 @@ struct make_receiver_tag_type
     }
 
     template<class...Values>
-    void operator()(Values&&...values) {
+    std::enable_if_t<std::is_invocable<value_type, Values...>::value> operator()(Values&&...values) {
         value(std::forward<Values>(values)...);
     }
 };
