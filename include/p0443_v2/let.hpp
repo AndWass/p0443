@@ -66,7 +66,7 @@ struct let_receiver : remove_cvref_t<Receiver>
     void set_value(Values &&... values) {
         life_extender<Values...> extender((receiver_type &&) * this,
                                           std::forward<Values>(values)...);
-        p0443_v2::submit(extender.call_with_arguments(function_), extender);
+        p0443_v2::submit(extender.call_with_arguments(function_), std::move(extender));
     }
 
     void set_value() {
@@ -82,9 +82,12 @@ struct let_sender
     sender_type sender_;
     function_type function_;
 
+    template<class S, class F>
+    let_sender(S &&s, F &&f): sender_(std::forward<S>(s)), function_(std::forward<F>(f)) {}
+
     template <class Receiver>
     void submit(Receiver &&receiver) {
-        p0443_v2::submit(sender_, let_receiver<Receiver, Function>(receiver, function_));
+        p0443_v2::submit(sender_, let_receiver<Receiver, Function>(std::forward<Receiver>(receiver), std::move(function_)));
     }
 };
 } // namespace detail
@@ -92,7 +95,7 @@ inline constexpr struct let_fn
 {
     template <class Sender, class Function>
     auto operator()(Sender && sender, Function && fn) const {
-        return detail::let_sender<Sender, Function>{sender, fn};
+        return detail::let_sender<Sender, Function>{std::forward<Sender>(sender), std::forward<Function>(fn)};
     }
 } let;
 } // namespace p0443_v2

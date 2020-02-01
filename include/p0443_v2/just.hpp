@@ -16,27 +16,14 @@ struct just_sender
     using value_type = typename p0443_v2::sender_value_type_for<Values...>::type;
     value_type val_;
 
-    template<class...Vs>
-    just_sender(std::in_place_t, Vs&&...v): val_(std::forward<Vs>(v)...) {}
+    template<class...Vs/*, std::enable_if_t<std::is_constructible_v<value_type, Vs...>>* = nullptr*/>
+    just_sender(Vs&&...v): val_(std::forward<Vs>(v)...) {}
 
     template<class Receiver>
-    void submit(Receiver&& recv) & {
+    void submit(Receiver&& recv) {
         try {
             auto caller = [&recv](auto&&...values) {
-                p0443_v2::set_value(recv, values...);
-            };
-            std::apply(caller, val_);
-        }
-        catch(...) {
-            p0443_v2::set_error(recv, std::current_exception());
-        }
-    }
-
-    template<class Receiver>
-    void submit(Receiver&& recv) && {
-        try {
-            auto caller = [&recv](auto&&...values) {
-                p0443_v2::set_value(recv, std::move(values)...);
+                p0443_v2::set_value(std::move(recv), std::move(values)...);
             };
             std::apply(caller, std::move(val_));
         }
@@ -53,22 +40,12 @@ struct just_sender<Value>
     value_type val_;
 
     template<class Vs, std::enable_if_t<std::is_constructible_v<value_type, Vs>>* = nullptr>
-    explicit just_sender(std::in_place_t, Vs&& v): val_(std::forward<Vs>(v)) {}
+    explicit just_sender(Vs&& v): val_(std::forward<Vs>(v)) {}
 
     template<class Receiver>
-    void submit(Receiver&& recv) & {
+    void submit(Receiver&& recv) {
         try {
-            p0443_v2::set_value(recv, val_);
-        }
-        catch(...) {
-            p0443_v2::set_error(recv, std::current_exception());
-        }
-    }
-
-    template<class Receiver>
-    void submit(Receiver&& recv) && {
-        try {
-            p0443_v2::set_value(recv, std::move(val_));
+            p0443_v2::set_value(std::forward<Receiver>(recv), std::move(val_));
         }
         catch(...) {
             p0443_v2::set_error(recv, std::current_exception());
@@ -80,8 +57,6 @@ template<>
 struct just_sender<>
 {
     using value_type = void;
-
-    just_sender(std::in_place_t) {}
 
     template<class Receiver>
     void submit(Receiver&& recv) {
@@ -96,6 +71,6 @@ struct just_sender<>
 }
 
 constexpr auto just = [](auto&&...value) {
-    return detail::just_sender<decltype(value)...>(std::in_place, std::forward<decltype(value)>(value)...);
+    return detail::just_sender<decltype(value)...>(std::forward<decltype(value)>(value)...);
 };
 }

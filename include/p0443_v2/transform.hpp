@@ -162,16 +162,4 @@ struct transform_fn
 } // namespace detail
 
 constexpr ::p0443_v2::detail::transform_fn transform{};
-
-/*template <class Sender, class Function>
-auto transform(Sender &&sender, Function &&fn) {
-    return detail::transform_op<Sender, Function>(std::forward<Sender>(sender),
-                                                  std::forward<Function>(fn));
-}
-
-template <class Sender, class Function>
-auto transform_before(Sender &&sender, Function &&fn) {
-    return detail::transform_before_op<Sender, Function>(std::forward<Sender>(sender),
-                                                  std::forward<Function>(fn));
-}*/
 } // namespace p0443_v2
