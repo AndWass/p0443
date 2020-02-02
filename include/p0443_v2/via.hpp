@@ -106,8 +106,8 @@ struct via_sender
 
         std::decay_t<NextReceiver> next_;
 
-        template<class NR>
-        explicit via_receiver(std::in_place_t, NR &&next): next_(std::forward<NR>(next)) {}
+        template<class NR, std::enable_if_t<std::is_constructible_v<std::decay_t<NextReceiver>, NR>>* = nullptr>
+        explicit via_receiver(NR &&next): next_(std::forward<NR>(next)) {}
 
         template <class... Values>
         void set_value(Values &&... values) {
@@ -143,7 +143,7 @@ struct via_sender
 
     template<class Receiver>
     void submit(Receiver &&recv) {
-        p0443_v2::submit(target_, via_receiver<Receiver>(std::in_place, std::forward<Receiver>(recv)));
+        p0443_v2::submit(target_, via_receiver<Receiver>(std::forward<Receiver>(recv)));
     }
 };
 

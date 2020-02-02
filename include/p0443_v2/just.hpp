@@ -16,7 +16,7 @@ struct just_sender
     using value_type = typename p0443_v2::sender_value_type_for<Values...>::type;
     value_type val_;
 
-    template<class...Vs/*, std::enable_if_t<std::is_constructible_v<value_type, Vs...>>* = nullptr*/>
+    template<class...Vs, std::enable_if_t<std::is_constructible_v<value_type, Vs...>>* = nullptr>
     just_sender(Vs&&...v): val_(std::forward<Vs>(v)...) {}
 
     template<class Receiver>

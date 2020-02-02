@@ -12,8 +12,10 @@
 
 namespace p0443_v2::asio
 {
-template <class Protocol, class Executor = boost::asio::executor>
-struct connect
+namespace detail
+{
+template <class Protocol, class Executor>
+struct connect_sender
 {
     using socket_type = boost::asio::basic_socket<Protocol, Executor>;
     using endpoint_type = boost::asio::ip::basic_endpoint<Protocol>;
@@ -29,10 +31,10 @@ struct connect
     using value_types = std::variant<endpoint_type>;
     using error_types = std::variant<std::exception_ptr>;
 
-    connect(boost::asio::basic_socket<Protocol, Executor> &socket, resolver_results &resolve_results):
+    connect_sender(boost::asio::basic_socket<Protocol, Executor> &socket, resolver_results &resolve_results):
         socket_(&socket), endpoints_{&resolve_results} {}
 
-    connect(boost::asio::basic_socket<Protocol, Executor> &socket, endpoint_type &begin):
+    connect_sender(boost::asio::basic_socket<Protocol, Executor> &socket, endpoint_type &begin):
         socket_(&socket), endpoints_(endpoint_range{&begin, (&begin)+1}) {}
 
     template <class Receiver>
@@ -85,4 +87,15 @@ private:
         }
     }
 };
+
+struct connect_cpo
+{
+    template<class Protocol, class Executor, class Endpoint>
+    auto operator()(boost::asio::basic_socket<Protocol, Executor> &socket, Endpoint& ep) const {
+        return connect_sender<Protocol, Executor>(socket, ep);
+    }
+};
+}
+
+constexpr detail::connect_cpo connect;
 } // namespace p0443_v2::asio

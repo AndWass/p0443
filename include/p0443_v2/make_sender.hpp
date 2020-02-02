@@ -13,8 +13,8 @@ struct sender_impl
     using submit_fn_type = std::decay_t<SubmitFn>;
     submit_fn_type submit_;
 
-    template<class Fn>
-    explicit sender_impl(std::in_place_t, Fn &&fn): submit_(std::forward<Fn>(fn)) {}
+    template<class Fn, std::enable_if_t<std::is_constructible_v<submit_fn_type, Fn>>* = nullptr>
+    explicit sender_impl(Fn &&fn): submit_(std::forward<Fn>(fn)) {}
 
     template<class Receiver>
     void submit(Receiver &&recv) {
@@ -26,7 +26,7 @@ struct make_sender_fn
 {
     template <class Submit>
     auto operator()(Submit&& submitfn) const {
-        return sender_impl<Submit>(std::in_place, std::forward<Submit>(submitfn));
+        return sender_impl<Submit>(std::forward<Submit>(submitfn));
     }
 };
 } // namespace make_sender_detail

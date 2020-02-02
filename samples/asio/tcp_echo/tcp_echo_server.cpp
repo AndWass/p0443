@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     auto connection_operation = [](net::ip::tcp::socket &socket) {
         // Store the remote endpoint so we can use it for printing the done message
         auto ep = socket.remote_endpoint();
-        // Use let to ensure both the socket and a read buffer is kept alive for the duration of the socket connection
+        // Use let to ensure both the socket and a read buffer is kept alive for the duration of the socket connection.
         auto socket_handler = p0443_v2::let(p0443_v2::just(std::move(socket), std::array<char, 128>{}), [](auto& socket, auto& buffer) {
             std::cout << "Connection from " << socket.remote_endpoint().port() << "\n";
             // Then takes the values from a sender and uses them as input to the supplied function. The returned value
@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
             auto chain = p0443_v2::then(p0443_v2::asio::read_some(socket, net::buffer(buffer)), [&socket, &buffer](std::size_t amount_read) mutable {
                 return p0443_v2::asio::write_all(socket, boost::asio::buffer(buffer.data(), amount_read));
             });
-            // submit_while will continue to resubmit chain forever
+            // submit_while will continue to resubmit chain forever,
+            // so until done, read some then write all we read and so on
             return p0443_v2::submit_while(std::move(chain), []() {
                 return true;
             });

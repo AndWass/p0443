@@ -14,7 +14,7 @@ struct then_receiver: Receiver
 
     template<class...Values>
     void set_value(Values&&...values) {
-        p0443_v2::submit(function_(std::forward<Values>(values)...), (Receiver&&)*this);
+        p0443_v2::submit(function_(values...), (Receiver&&)*this);
     }
 };
 
