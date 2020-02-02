@@ -19,3 +19,15 @@ buildTests:
       short: Disable tests
       settings:
         P0443_BUILD_TESTS: no
+buildSamples:
+  default: 'yes'
+  choices:
+    'yes':
+      short: Build samples
+      long: Build all tests
+      settings:
+        P0443_BUILD_SAMPLES: yes
+    'no':
+      short: Don't build samples
+      settings:
+        P0443_BUILD_SAMPLES: no
