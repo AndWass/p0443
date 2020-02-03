@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
     auto read_print = [&](read_state& state) {
         return p0443_v2::transform(p0443_v2::asio::read_some(state.socket, boost::asio::buffer(state.read_buffer)), [&](std::size_t read_amount) {
-            std::printf("Data read = '%.*s'\n", read_amount, state.read_buffer.data());
+            std::printf("Data read = '%.*s'\n", static_cast<int>(read_amount), state.read_buffer.data());
         });
     };
 

@@ -66,7 +66,10 @@ struct let_receiver : remove_cvref_t<Receiver>
     void set_value(Values &&... values) {
         life_extender<Values...> extender((receiver_type &&) * this,
                                           std::forward<Values>(values)...);
-        p0443_v2::submit(extender.call_with_arguments(function_), std::move(extender));
+        // extender will be moved below so ensure we don't do any
+        // unspecified evaluation order
+        auto next_sender = extender.call_with_arguments(function_);
+        p0443_v2::submit(std::move(next_sender), std::move(extender));
     }
 
     void set_value() {

@@ -62,11 +62,12 @@ int main(int argc, char **argv) {
                 return p0443_v2::asio::write_all(socket,
                                                  boost::asio::buffer(buffer.data(), amount_read));
             };
+            // socket |> read_some(buffer) |> then(write_all)
             auto read_write_sender = p0443_v2::then(
                 p0443_v2::asio::read_some(socket, net::buffer(buffer)), std::move(write_all));
 
-            // submit_while will continue to resubmit read_write_sender forever,
-            // so until done, read some then write all we read and so on
+            // submit_while will continue to resubmit read_write_sender forever, unless
+            // set_done is called
             auto forever = [] { return true; };
             return p0443_v2::submit_while(std::move(read_write_sender), forever);
         };
