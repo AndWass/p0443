@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <list>
 #include <string>
+#include <deque>
 
 #include <p0443_v2/asio/accept.hpp>
 #include <p0443_v2/asio/read_all.hpp>
@@ -85,6 +86,10 @@ struct chat_room
     auto participant_handler_for(chat_participant &participant) {
         participants_.push_back(&participant);
 
+        for(const auto &msg: recent_messages_) {
+            participant.deliver(msg);
+        }
+
         auto participant_remover = [this, &participant]() {
             auto address = participant.socket_.remote_endpoint().address().to_string();
             auto port = participant.socket_.remote_endpoint().port();
@@ -106,6 +111,7 @@ struct chat_room
                                                p->deliver(participant.read_message_);
                                            }
                                        }
+                                       add_recent_message(participant.read_message_);
                                        return true;
                                    });
 
@@ -114,6 +120,16 @@ struct chat_room
 
 private:
     std::vector<chat_participant *> participants_;
+
+    void add_recent_message(const chat_message& msg) {
+        recent_messages_.push_back(msg);
+        while(recent_messages_.size() > recent_messages_size_)
+        {
+            recent_messages_.pop_front();
+        }
+    }
+    std::deque<chat_message> recent_messages_;
+    constexpr static std::size_t recent_messages_size_ = 10;
 };
 
 int main(int argc, char **argv) {

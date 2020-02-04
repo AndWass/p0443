@@ -61,18 +61,19 @@ private:
 };
 
 int main(int argc, char **argv) {
-    /*if (argc != 3) {
+    if (argc != 3) {
         printf("Usage: samples-asio-chat-client <host> <port>\n");
         return 1;
-    }*/
+    }
 
-    std::string_view host = "localhost";//argv[1];
-    std::string_view port = "12345";//argv[2];
+    std::string_view host = argv[1];
+    std::string_view port = argv[2];
 
     net::io_context io;
     net::ip::tcp::resolver resolver(io);
     auto resolve_results = resolver.resolve(net::ip::tcp::v4(), host, port);
     net::ip::tcp::socket socket(io);
+    
     for (auto &r : resolve_results) {
         try {
             socket.connect(r);

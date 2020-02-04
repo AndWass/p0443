@@ -29,8 +29,6 @@ struct chat_message
         auto read_header = p0443_v2::asio::read_all(socket, net::buffer(message_));
         auto read_body = [this, &socket](std::size_t /*header_read_amount = 4*/) {
             auto body_size = std::atoi(message_.c_str());
-            printf("Body size = %d bytes\n", (int)body_size);
-            fflush(stdout);
             message_.resize(body_size);
             return p0443_v2::asio::read_all(socket, net::buffer(message_));
         };
