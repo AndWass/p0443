@@ -10,23 +10,23 @@ namespace p0443_v2
 {
 namespace detail
 {
-template <class Sender, class Predicate>
+template <class SenderFactory, class Predicate>
 struct submit_while_sender
 {
-    using sender_type = p0443_v2::remove_cvref_t<Sender>;
+    using sender_factory_type = p0443_v2::remove_cvref_t<SenderFactory>;
     using predicate_type = p0443_v2::remove_cvref_t<Predicate>;
 
     template <class Receiver>
-    struct receiver
+    struct receiver_t
     {
         using receiver_type = p0443_v2::remove_cvref_t<Receiver>;
 
-        sender_type sender_;
+        sender_factory_type sender_;
         predicate_type predicate_;
         receiver_type target_;
 
         template <class S, class P, class R>
-        receiver(S &&sender, P &&predicate, R &&target)
+        receiver_t(S &&sender, P &&predicate, R &&target)
             : sender_(std::forward<S>(sender)), predicate_(std::forward<P>(predicate)),
               target_(std::forward<R>(target)) {
         }
@@ -37,10 +37,10 @@ struct submit_while_sender
                 bool predicate_result = predicate_(values...);
 
                 if (predicate_result) {
-                    p0443_v2::submit(sender_, receiver<Receiver>(*this));
+                    p0443_v2::submit(sender_(), receiver_t<Receiver>(*this));
                 }
                 else {
-                    p0443_v2::set_value(target_, std::forward<Values>(values...));
+                    p0443_v2::set_value(target_, std::forward<Values>(values)...);
                 }
             }
             catch (...) {
@@ -58,7 +58,7 @@ struct submit_while_sender
         }
     };
 
-    sender_type sender_;
+    sender_factory_type sender_;
     predicate_type predicate_;
 
     template <class S, class P>
@@ -68,17 +68,18 @@ struct submit_while_sender
 
     template <class Receiver>
     void submit(Receiver &&receiver) {
-        p0443_v2::submit(sender_,
-                         receiver<Receiver>(sender_, predicate_,
-                                            std::forward<Receiver>(sender_, predicate_, receiver)));
+        p0443_v2::submit(sender_(),
+                         receiver_t<Receiver>(sender_, predicate_,
+                                            std::forward<Receiver>(receiver)));
     }
 };
 
 struct submit_while_fn
 {
-    template <class Sender, class Predicate>
-    auto operator()(Sender && sender, Predicate && predicate) const {
-        return submit_while_sender<Sender, Predicate>(std::forward<Sender>(sender),
+    template <class SenderFactory, class Predicate>
+    auto operator()(SenderFactory && sender_factory, Predicate && predicate) const {
+        static_assert(std::is_invocable<SenderFactory>::value, "SenderFactory must be of the signature sender fn()");
+        return submit_while_sender<SenderFactory, Predicate>(std::forward<SenderFactory>(sender_factory),
                                                       std::forward<Predicate>(predicate));
     }
 };

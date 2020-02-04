@@ -25,9 +25,10 @@ struct when_any_op
     struct receiver
     {
         struct shared_state {
-            std::optional<p0443_v2::remove_cvref_t<Receiver>> recv_;
+            using stored_recv_t = std::optional<p0443_v2::remove_cvref_t<Receiver>>;
+            stored_recv_t recv_;
 
-            template<class Rx>
+            template<class Rx, std::enable_if_t<std::is_constructible_v<stored_recv_t, std::in_place_t, Rx>>* = nullptr>
             shared_state(Rx &&rx): recv_(std::in_place, std::forward<Rx>(rx)) {}
 
             template<class...Values>
@@ -80,8 +81,8 @@ struct when_any_op
 
     senders_storage senders_;
 
-    template<class...Tx>
-    explicit when_any_op(std::in_place_t, Tx &&...tx): senders_(std::forward<Tx>(tx)...) {}
+    template<class...Tx, std::enable_if_t<std::is_constructible_v<senders_storage, Tx...>>* = nullptr>
+    explicit when_any_op(Tx &&...tx): senders_(std::forward<Tx>(tx)...) {}
 
     template<class Receiver>
     void submit(Receiver&& rx) {
@@ -101,6 +102,6 @@ auto when_any(Sender&& sender) {
 template<class...Senders>
 auto when_any(Senders&&...senders) {
     static_assert(sizeof...(Senders) > 0, "when_any must take at least 1 sender");
-    return detail::when_any_op<Senders...>(std::in_place, std::forward<Senders>(senders)...);
+    return detail::when_any_op<Senders...>(std::forward<Senders>(senders)...);
 }
 }
