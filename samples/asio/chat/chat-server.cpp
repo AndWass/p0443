@@ -1,10 +1,3 @@
-/**
- * This is a small sample of a simple chat server
- *
- * Each message is sent as lines
- *
- */
-
 #include <algorithm>
 #include <cstdio>
 #include <list>
