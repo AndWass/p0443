@@ -69,10 +69,10 @@ int main(int argc, char **argv) {
             // submit_while will continue to resubmit read_write_sender forever, unless
             // set_done is called
             auto forever = [] { return true; };
-            return p0443_v2::submit_while(std::move(read_write_sender), forever);
+            return p0443_v2::submit_while([&] { return read_write_sender; }, forever);
         };
         auto socket_handler =
-            p0443_v2::with(std::move(socket), std::array<char, 128>{}, single_socket_function);
+            p0443_v2::with(single_socket_function, std::move(socket), std::array<char, 128>{});
         // So here we have a let sender connected to a function that will return a submit_while
         // sender, this effectively gives us a way to say "while not done do...", which we use to
         // read some data, then write all of that data until we again read some data and so on.
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
         return true;
     };
     p0443_v2::submit(
-        p0443_v2::submit_while(p0443_v2::asio::accept(acceptor), std::move(connection_operation)),
+        p0443_v2::submit_while([&] { return p0443_v2::asio::accept(acceptor); }, std::move(connection_operation)),
         p0443_v2::sink_receiver{});
     io.run();
 }

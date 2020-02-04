@@ -14,44 +14,27 @@ namespace p0443_v2
 namespace detail
 {
 template <class Receiver, class Function>
-struct let_receiver : remove_cvref_t<Receiver>
+struct let_receiver : std::decay_t<Receiver>
 {
-    using receiver_type = remove_cvref_t<Receiver>;
+    using receiver_type = std::decay_t<Receiver>;
     using function_type = remove_cvref_t<Function>;
 
     template <class... Values>
-    struct life_extender : receiver_type
+    struct life_extender : std::decay_t<Receiver>
     {
-        using storage_type = std::tuple<remove_cvref_t<Values>...>;
+        using storage_type = std::tuple<std::decay_t<Values>...>;
+        using base_ = std::decay_t<Receiver>;
         std::shared_ptr<storage_type> data_;
 
         template <class R, class... Vs>
         explicit life_extender(R &&r, Vs &&... values)
-            : receiver_type(std::forward<R>(r)),
+            : base_(std::forward<R>(r)),
               data_(std::make_shared<storage_type>(std::forward<Vs>(values)...)) {
         }
 
         template <class Fn>
-        decltype(auto) call_with_arguments(Fn &&fn) {
+        auto call_with_arguments(Fn &&fn) {
             return std::apply(std::forward<Fn>(fn), *data_);
-        }
-    };
-
-    template <class Value>
-    struct life_extender<Value> : receiver_type
-    {
-        using storage_type = remove_cvref_t<Value>;
-        std::shared_ptr<storage_type> data_;
-
-        template <class R, class V>
-        life_extender(R &&r, V &&val)
-            : receiver_type(std::forward<R>(r)),
-              data_(std::make_shared<storage_type>(std::forward<V>(val))) {
-        }
-
-        template <class Fn>
-        decltype(auto) call_with_arguments(Fn &&fn) {
-            return fn(*data_);
         }
     };
 
@@ -64,7 +47,7 @@ struct let_receiver : remove_cvref_t<Receiver>
 
     template <class... Values>
     void set_value(Values &&... values) {
-        life_extender<Values...> extender((receiver_type &&) * this,
+        life_extender<Values...> extender((Receiver&&) * this,
                                           std::forward<Values>(values)...);
         // extender will be moved below so ensure we don't do any
         // unspecified evaluation order

@@ -57,11 +57,11 @@ int main(int argc, char **argv) {
     };
 
     // With is a simplification where
-    // with(value1, value2, fn) = let(just(value1, value2), fn)
-    auto connector = p0443_v2::with(read_state(io), [&](read_state& state) {
+    // with(fn, value1, value2) = let(just(value1, value2), fn)
+    auto connector = p0443_v2::with([&](read_state& state) {
         state.read_buffer.resize(string_to_send.size());
         return p0443_v2::sequence(resolve_connect(state.resolver, state.socket, argv[1], argv[2]), write_read(state));
-    });
+    }, read_state(io));
 
     p0443_v2::submit(std::move(connector), p0443_v2::done_channel([] {
         std::printf("Done\n");

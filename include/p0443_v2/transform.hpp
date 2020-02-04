@@ -23,52 +23,32 @@ struct transform_op
         using receiver_type = p0443_v2::remove_cvref_t<Receiver>;
         receiver_type next_;
         function_type fn_;
-    private:
-        struct tag_helper
-        {
-            template <class Recv, class Fn, class... Values>
-            std::enable_if_t<p0443_v2::is_receiver_for_values_v<Recv>>
-            operator()(std::true_type, Recv&& next, Fn&& fn, Values&&...values)
-            {
-                try {
-                    fn(std::forward<Values>(values)...);
-                    p0443_v2::set_value((receiver_type&&)next);
-                }
-                catch (...) {
-                    p0443_v2::set_error(next, std::current_exception());
-                }
-            }
-
-            template <class Recv, class Fn, class... Values>
-            std::enable_if_t<p0443_v2::is_receiver_for_values_v<Recv, std::invoke_result_t<Fn, Values...>>>
-            operator()(std::false_type, Recv&& next, Fn&& fn, Values&&...values)
-            {
-                try {
-                    p0443_v2::set_value((receiver_type&&)next, fn(std::forward<Values>(values)...));
-                }
-                catch (...) {
-                    p0443_v2::set_error(next, std::current_exception());
-                }
-            }
-        };
-        public:
 
         template <class Rx, class Fn>
-        receiver(Rx &&rx, Fn &&fn) : next_(std::forward<Rx>(rx)), fn_(fn) {
+        receiver(Rx &&rx, Fn &&fn) : next_(std::forward<Rx>(rx)), fn_(std::forward<Fn>(fn)) {
         }
 
-        template <class... Values>
-        std::enable_if_t<
-            std::is_invocable_v<tag_helper,
-                std::is_void<std::invoke_result_t<function_type, Values...>>,
-                receiver_type&,
-                function_type&,
-                Values...
-            >
-        >
-        set_value(Values &&... values) {
-            tag_helper{}(std::is_void<std::invoke_result_t<function_type, Values...>>{},
-                next_, fn_, std::forward<Values>(values)...);
+        template<class...Values>
+        void set_value(Values&&...values) {
+            if constexpr(std::is_void<std::invoke_result_t<function_type, Values...>>::value)
+            {
+                try {
+                    fn_(std::forward<Values>(values)...);
+                    p0443_v2::set_value((receiver_type&&)next_);
+                }
+                catch (...) {
+                    p0443_v2::set_error(next_, std::current_exception());
+                }
+            }
+            else
+            {
+                try {
+                    p0443_v2::set_value((receiver_type&&)next_, fn_(std::forward<Values>(values)...));
+                }
+                catch (...) {
+                    p0443_v2::set_error(next_, std::current_exception());
+                }
+            }
         }
 
         void set_done() {
@@ -86,7 +66,7 @@ struct transform_op
 
     template <class Receiver>
     void submit(Receiver &&rx) {
-        p0443_v2::submit((sender_type &&) sender_,
+        p0443_v2::submit(sender_,
                          receiver<Receiver>(std::forward<Receiver>(rx), function_));
     }
 
