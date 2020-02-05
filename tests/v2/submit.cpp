@@ -11,9 +11,6 @@
 #include <p0443_v2/just.hpp>
 #include <p0443_v2/via.hpp>
 
-#include <p0443_v2/sender_traits.hpp>
-#include <p0443_v2/receiver_traits.hpp>
-
 #include <iostream>
 
 namespace submit_test
