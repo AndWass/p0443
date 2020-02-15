@@ -16,6 +16,14 @@ namespace detail
 template<class Stream>
 struct read_all_sender
 {
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<std::size_t>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<>;
+
+    static constexpr bool sends_done = true;
+
     Stream *stream_;
     boost::asio::mutable_buffer buffer_;
 

@@ -15,6 +15,7 @@
 #include <p0443_v2/set_value.hpp>
 #include <p0443_v2/set_error.hpp>
 #include <p0443_v2/set_done.hpp>
+#include <p0443_v2/sender_traits.hpp>
 
 namespace p0443_v2
 {
@@ -26,7 +27,14 @@ struct sequence_op;
 template <class S1, class S2>
 struct sequence_op<S1, S2>
 {
-    using value_type = typename sender_value_type<S2>::type;
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = typename p0443_v2::sender_traits<S2>::template value_types<Tuple, Variant>;
+
+    template<template<class...> class Variant>
+    using error_types = p0443_v2::append_error_types<Variant, S2, std::exception_ptr>;
+
+    static constexpr bool sends_done = p0443_v2::sender_traits<S2>::sends_done;
+
     template <class Receiver>
     struct sequence_receiver
     {

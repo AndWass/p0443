@@ -21,7 +21,16 @@ namespace detail
 {
 struct resolve
 {
-    using value_type = boost::asio::ip::tcp::resolver::results_type;
+    //using value_type = boost::asio::ip::tcp::resolver::results_type;
+
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<boost::asio::ip::tcp::resolver::results_type>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<>;
+
+    static constexpr bool sets_done =  true;
+
     template <class Receiver>
     void submit(Receiver &&recv) {
             if (!resolv_ || host_.empty() || service_.empty()) {

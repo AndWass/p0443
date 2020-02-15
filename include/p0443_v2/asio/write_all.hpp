@@ -16,6 +16,14 @@ namespace detail
 template<class Stream>
 struct write_all_sender
 {
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<std::exception_ptr>;
+
+    static constexpr bool sends_done =  true;
+
     Stream *stream_;
     boost::asio::const_buffer buffer_;
 

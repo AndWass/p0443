@@ -1,0 +1,41 @@
+#pragma once
+
+#include <p0443_v2/type_traits.hpp>
+#include <type_traits>
+
+namespace p0443_v2
+{
+namespace detail
+{
+void start();
+
+struct start_cpo
+{
+    template<class Operation>
+    using member_detector = decltype(std::declval<Operation>().start());
+
+    template<class Operation>
+    using free_function_detector = decltype(start(std::declval<Operation>()));
+
+    template<class Operation>
+    using use_member = p0443_v2::is_detected<member_detector, Operation>;
+
+    template<class Operation>
+    using use_free_function = std::conjunction<
+        std::negation<use_member<Operation>>,
+        p0443_v2::is_detected<free_function_detector, Operation>
+    >;
+
+    template<class Operation, std::enable_if_t<use_member<Operation>::value>* = nullptr>
+    auto operator()(Operation& op) const {
+        return op.start();
+    }
+
+    template<class Operation, std::enable_if_t<use_free_function<Operation>::value>* = nullptr>
+    auto operator()(Operation &op) const {
+        return start(std::forward<Operation>(op));
+    }
+};
+}
+constexpr detail::start_cpo start;
+}

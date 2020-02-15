@@ -9,6 +9,8 @@
 #include <type_traits>
 #include <p0443_v2/submit.hpp>
 
+#include <p0443_v2/sender_traits.hpp>
+
 namespace p0443_v2
 {
 namespace detail
@@ -28,6 +30,28 @@ template<class Sender, class Function>
 struct then_sender: Sender
 {
     Function function_;
+
+    template<template<class...> class Tuple, template<class...> class Variant>
+    struct value_types_extractor
+    {
+        template<class ST>
+        using extractor = typename p0443_v2::sender_traits<ST>::template value_types<Tuple, Variant>;
+
+        using sender_value_types = boost::mp11::mp_transform<extractor, p0443_v2::function_result_types<Variant, Function, Sender>>;
+
+        template<class T1, class T2>
+        using concat = p0443_v2::concat_value_types<Tuple, Variant, T1, T2>;
+
+        using folded_sender_value_types = boost::mp11::mp_fold<sender_value_types, boost::mp11::mp_first<sender_value_types>, concat>;
+    };
+
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = typename value_types_extractor<Tuple, Variant>::folded_sender_value_types;
+
+    template<template<class...> class Variant>
+    using error_types = typename p0443_v2::sender_traits<Sender>::template error_types<Variant>;
+
+    static constexpr bool sends_done = p0443_v2::sender_traits<Sender>::sends_done;
 
     template<class Receiver>
     void submit(Receiver&& recv) {

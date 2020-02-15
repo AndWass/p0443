@@ -18,6 +18,14 @@ struct read_some_sender
     Stream *stream_;
     boost::asio::mutable_buffer buffer_;
 
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<std::size_t>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<std::exception_ptr>;
+
+    static constexpr bool sends_done =  true;
+
     template<class Buffer>
     read_some_sender(Stream& stream, Buffer&& buffer): stream_(&stream), buffer_(buffer) {}
 

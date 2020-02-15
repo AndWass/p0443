@@ -6,12 +6,15 @@
 
 #pragma once
 
+#include <p0443_v2/sender_traits.hpp>
 #include <p0443_v2/submit.hpp>
 
 #include <atomic>
 #include <exception>
 #include <optional>
 #include <thread>
+#include <variant>
+#include <tuple>
 
 namespace p0443_v2
 {
@@ -117,15 +120,53 @@ private:
     std::atomic_bool has_been_set_{false};
 };
 
-struct sync_wait_impl
+template<class T>
+struct valued_sync_wait_impl
 {
-    template <class R, class Sender>
-    static auto wait(Sender &&sender) {
-        shared_state<R> state;
+    template<class Sender>
+    static auto run(Sender &&sender)
+    {
+        using decayed = std::decay_t<Sender>;
+        using value_types = typename p0443_v2::sender_traits<decayed>::template value_types<std::tuple, std::variant>;
+        shared_state<value_types> state;
         p0443_v2::submit(std::forward<Sender>(sender), state.ref());
         return state.get();
     }
 };
+
+template<class T>
+struct valued_sync_wait_impl<std::variant<std::tuple<T>>>
+{
+    template<class Sender>
+    static auto run(Sender &&sender)
+    {
+        shared_state<T> state;
+        p0443_v2::submit(std::forward<Sender>(sender), state.ref());
+        return state.get();
+    }
+};
+
+template<>
+struct valued_sync_wait_impl<std::variant<std::tuple<>>>
+{
+    template<class Sender>
+    static auto run(Sender &&sender)
+    {
+        shared_state<void> state;
+        p0443_v2::submit(std::forward<Sender>(sender), state.ref());
+        state.get();
+    }
+};
+
+struct sync_wait_cpo
+{
+    template <class Sender>
+    constexpr auto operator()(Sender &&sender) const {
+        using decayed = std::decay_t<Sender>;
+        using value_types = typename p0443_v2::sender_traits<decayed>::template value_types<std::tuple, std::variant>;
+        return p0443_v2::detail::valued_sync_wait_impl<value_types>::run(std::forward<Sender>(sender));
+    }
+};
 } // namespace detail
-using sync = detail::sync_wait_impl;
+detail::sync_wait_cpo sync_wait;
 } // namespace p0443_v2

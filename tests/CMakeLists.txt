@@ -10,6 +10,9 @@ add_executable(p0443-tests
     v2/asio_executor.cpp
     v2/handle_error.cpp
     v2/asio_connect.cpp
+    v2/just.cpp
+    v2/sender_traits.cpp
+    v2/sequence.cpp
 )
 
 target_link_libraries(p0443-tests PRIVATE p0443
