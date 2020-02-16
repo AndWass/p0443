@@ -50,6 +50,14 @@ struct counting_receiver
 
 struct test_sender
 {
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<>>;
+    
+    template<template<class...> class Variant>
+    using error_types = Variant<>;
+
+    static constexpr bool sends_done = false;
+
     template<class Receiver>
     void submit(Receiver &&rcv)
     {
@@ -74,6 +82,12 @@ template<class...Values>
 struct value_sender
 {
     std::tuple<std::decay_t<Values>...> val_;
+
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<std::decay_t<Values>...>>;
+    
+    template<template<class...> class Variant>
+    using error_types = Variant<>;
 
     template<class...Vs>
     value_sender(Vs&&... v): val_(std::forward<Vs>(v)...) {}

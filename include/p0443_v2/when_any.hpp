@@ -8,8 +8,10 @@
 
 #include <tuple>
 #include <boost/mp11/tuple.hpp>
-#include <p0443_v2/type_traits.hpp>
+#include <boost/mp11/algorithm.hpp>
 
+#include <p0443_v2/type_traits.hpp>
+#include <p0443_v2/sender_traits.hpp>
 #include <p0443_v2/set_value.hpp>
 #include <p0443_v2/set_done.hpp>
 #include <p0443_v2/set_error.hpp>
@@ -25,7 +27,23 @@ namespace detail
 template<class...Senders>
 struct when_any_op
 {
-    using senders_storage = std::tuple<p0443_v2::remove_cvref_t<Senders>...>;
+    using senders_storage = std::tuple<Senders...>;
+
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = boost::mp11::mp_unique<
+        boost::mp11::mp_append<
+            typename p0443_v2::sender_traits<Senders>::template value_types<Tuple, Variant>...
+        >
+    >;
+
+    template<template<class...> class Variant>
+    using error_types = boost::mp11::mp_unique<
+        boost::mp11::mp_append<
+            typename p0443_v2::sender_traits<Senders>::template error_types<Variant>...
+        >
+    >;
+
+    static constexpr bool sends_done = (p0443_v2::sender_traits<Senders>::sends_done || ...);
 
     template<class Receiver>
     struct receiver
@@ -102,12 +120,12 @@ struct when_any_op
 
 template<class Sender>
 auto when_any(Sender&& sender) {
-    return std::forward<Sender>(sender);
+    return std::forward<p0443_v2::remove_cvref_t<Sender>>(sender);
 }
 
 template<class...Senders>
 auto when_any(Senders&&...senders) {
     static_assert(sizeof...(Senders) > 0, "when_any must take at least 1 sender");
-    return detail::when_any_op<Senders...>(std::forward<Senders>(senders)...);
+    return detail::when_any_op<p0443_v2::remove_cvref_t<Senders>...>(std::forward<Senders>(senders)...);
 }
 }

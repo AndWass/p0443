@@ -3,6 +3,7 @@
 #include <p0443_v2/transform.hpp>
 #include <p0443_v2/when_all.hpp>
 #include <p0443_v2/when_any.hpp>
+#include <p0443_v2/just.hpp>
 
 #include <doctest/doctest.h>
 #include <iostream>
@@ -194,6 +195,8 @@ TEST_CASE("when_all: basic functionality") {
     REQUIRE(first_called);
     REQUIRE(second_called);
     REQUIRE(third_called);
+
+    std::cout << pretty_function<typename decltype(p0443_v2::when_all(first, second, third))::value_types<std::tuple, std::variant>>() << std::endl;
 }
 
 TEST_CASE("when_all: with values") {
@@ -232,4 +235,9 @@ TEST_CASE("when_all: with values") {
     REQUIRE(first_called);
     REQUIRE(second_called);
     REQUIRE(third_called);
+}
+
+TEST_CASE("when_all: value_types")
+{
+    std::cout << pretty_function<typename decltype(p0443_v2::when_all(p0443_v2::just(), p0443_v2::just(true), p0443_v2::just(20.0f, false)))::value_types<std::tuple, std::variant>>() << std::endl;
 }
