@@ -7,49 +7,7 @@
 
 #include <doctest/doctest.h>
 
-struct immediate_task
-{
-    struct promise_type
-    {
-        auto get_return_object()
-        {
-            return p0443_v2::stdcoro::coroutine_handle<promise_type>::from_promise(*this);
-        }
-
-        p0443_v2::stdcoro::suspend_never initial_suspend() {
-            return {};
-        }
-
-        struct final_suspender
-        {
-            bool await_ready() {
-                return false;
-            }
-
-            void await_resume() {}
-
-            void await_suspend(p0443_v2::stdcoro::coroutine_handle<promise_type> other) {
-                other.destroy();
-            }
-        };
-
-
-
-        final_suspender final_suspend() noexcept {
-            return {};
-        }
-
-        void unhandled_exception() noexcept
-        {
-        }
-
-        void return_void() {}
-    };
-
-    immediate_task(p0443_v2::stdcoro::coroutine_handle<promise_type> coro): coroutine_(coro) {}
-
-    p0443_v2::stdcoro::coroutine_handle<promise_type> coroutine_;
-};
+#include "immediate_task.hpp"
 
 TEST_CASE("await_sender: just()")
 {

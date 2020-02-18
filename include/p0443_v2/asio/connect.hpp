@@ -36,8 +36,13 @@ struct connect_sender
     };
     std::variant<endpoint_range, const resolver_results*> endpoints_;
 
-    using value_types = std::variant<endpoint_type>;
-    using error_types = std::variant<std::exception_ptr>;
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<endpoint_type>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<std::exception_ptr>;
+
+    static constexpr bool sends_done = true;
 
     connect_sender(boost::asio::basic_socket<Protocol, Executor> &socket, resolver_results &resolve_results):
         socket_(&socket), endpoints_{&resolve_results} {}
@@ -53,6 +58,65 @@ struct connect_sender
         else {
             submit_resolver_results(std::forward<Receiver>(receiver));
         }
+    }
+
+    template<class Receiver>
+    struct operation_state
+    {
+        Receiver receiver_;
+        std::variant<endpoint_range, const resolver_results*> endpoints_;
+        socket_type *socket_;
+
+        void start() {
+            if(endpoints_.index() == 0) {
+                submit_endpoint_range();
+            }
+            else {
+                submit_resolver_results();
+            }
+        }
+
+        void submit_endpoint_range()
+        {
+            endpoint_range ep = std::get<0>(endpoints_);
+            if(ep.begin_) {
+                boost::asio::async_connect(*socket_, ep.begin_, ep.end_,
+                                            [end = ep.end_, receiver = std::move(receiver_)](const auto &ec, const auto ep) mutable {
+                                                if (ep == end) {
+                                                    p0443_v2::set_done(std::move(receiver));
+                                                }
+                                                else {
+                                                    p0443_v2::set_value(std::move(receiver), *ep);
+                                                }
+                                            });
+            }
+            else {
+                p0443_v2::set_done(std::move(receiver_));
+            }
+        }
+        void submit_resolver_results()
+        {
+            const resolver_results* ep = std::get<1>(endpoints_);
+            if(ep) {
+                boost::asio::async_connect(*socket_, *ep,
+                                            [receiver = std::move(receiver_)](const auto &ec, const auto& ep) mutable {
+                                                if (ep == endpoint_type()) {
+                                                    p0443_v2::set_done(std::move(receiver));
+                                                }
+                                                else {
+                                                    p0443_v2::set_value(std::move(receiver), ep);
+                                                }
+                                            });
+            }
+            else {
+                p0443_v2::set_done(std::move(receiver_));
+            }
+        }
+    };
+
+    template<class Receiver>
+    auto connect(Receiver &&receiver) {
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), endpoints_, socket_};
     }
 private:
     template<class Receiver>

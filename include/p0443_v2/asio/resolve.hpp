@@ -27,7 +27,7 @@ struct resolve
     using value_types = Variant<Tuple<boost::asio::ip::tcp::resolver::results_type>>;
 
     template<template<class...> class Variant>
-    using error_types = Variant<>;
+    using error_types = Variant<std::exception_ptr>;
 
     static constexpr bool sends_done =  true;
 
@@ -48,6 +48,38 @@ struct resolve
                                         }
                                     });
             }
+    }
+
+    template<class Receiver>
+    struct operation_state
+    {
+        Receiver receiver_;
+        boost::asio::ip::tcp::resolver *resolv_;
+        std::string host_;
+        std::string service_;
+
+        void start() {
+            if (!resolv_ || host_.empty() || service_.empty()) {
+                p0443_v2::set_done(std::move(receiver_));
+            }
+            else {
+                resolv_->async_resolve(host_, service_,
+                                    [receiver = std::move(receiver_)](
+                                        const auto &ec, auto results) mutable {
+                                        if (!ec) {
+                                            p0443_v2::set_value(std::move(receiver), results);
+                                        }
+                                        else {
+                                            p0443_v2::set_done(std::move(receiver));
+                                        }
+                                    });
+            }
+        }
+    };
+
+    template<class Receiver>
+    auto connect(Receiver&& receiver) {
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), resolv_, host_, service_};
     }
 
     auto schedule() {

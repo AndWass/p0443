@@ -19,6 +19,7 @@ set(sources
 if(P0443_BUILD_CORO_TESTS)
     list(APPEND sources
         v2/await_sender.cpp
+        v2/asio_coro_connect.cpp
     )
 endif()
 
