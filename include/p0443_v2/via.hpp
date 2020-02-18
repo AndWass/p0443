@@ -111,9 +111,10 @@ struct via_sender
         };
 
         std::decay_t<NextReceiver> next_;
+        scheduler_type scheduler_;
 
-        template<class NR, std::enable_if_t<std::is_constructible_v<std::decay_t<NextReceiver>, NR>>* = nullptr>
-        explicit via_receiver(NR &&next): next_(std::forward<NR>(next)) {}
+        template<class NR, class S, std::enable_if_t<std::is_constructible_v<std::decay_t<NextReceiver>, NR>>* = nullptr>
+        explicit via_receiver(NR &&next, S&& sched): next_(std::forward<NR>(next)), scheduler_(std::forward<S>(sched)) {}
 
         template <class... Values>
         void set_value(Values &&... values) {

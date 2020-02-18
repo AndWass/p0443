@@ -124,31 +124,32 @@ struct await_sender
         }
     };
 
-    template<class Sender, class = typename p0443_v2::sender_traits<Sender>::template value_types<std::tuple, std::variant>>
+    template<class S, class = typename p0443_v2::sender_traits<S>::template value_types<std::tuple, std::variant>>
     struct awaitable: awaitable_base<value_storage>
     {
-        using awaitable_base::awaitable_base;
+        using typename awaitable_base<value_storage>::error_visitor;
+        using awaitable_base<value_storage>::awaitable_base;
         value_storage await_resume() {
-            if (values_.index() == 0) {
+            if (this->values_.index() == 0) {
                 throw await_done_result();
             }
-            else if (values_.index() == 2) {
-                std::visit(error_visitor{}, std::get<2>(values_));
+            else if (this->values_.index() == 2) {
+                std::visit(error_visitor{}, std::get<2>(std::move(this->values_)));
             }
-            return std::get<1>(std::move(values_));
+            return std::get<1>(std::move(this->values_));
         }
     };
 
-    template<class Sender>
-    struct awaitable<Sender, std::variant<std::tuple<>>>: awaitable_base<std::monostate>
+    template<class S>
+    struct awaitable<S, std::variant<std::tuple<>>>: awaitable_base<std::monostate>
     {
-        using awaitable_base::awaitable_base;
+        using awaitable_base<std::monostate>::awaitable_base;
         void await_resume() {
-            if (values_.index() == 0) {
+            if (this->values_.index() == 0) {
                 throw await_done_result();
             }
-            else if (values_.index() == 2) {
-                std::visit(error_visitor{}, std::get<2>(values_));
+            else if (this->values_.index() == 2) {
+                std::visit(typename awaitable_base<std::monostate>::error_visitor{}, std::get<2>(this->values_));
             }
         }
     };

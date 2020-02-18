@@ -23,13 +23,15 @@ TEST_CASE("asio_coro: connect to local endpoint") {
 
     bool done = false;
 
-    [&]() -> immediate_task {
+    auto task = [&]() -> immediate_task {
         tcp::socket socket(io);
         tcp::endpoint local(boost::asio::ip::address::from_string("127.0.0.1"), 12345);
         auto ep = co_await p0443_v2::await_sender(p0443_v2::asio::connect(socket, local));
         REQUIRE(ep.port() == 12345);
         done = true;
-    }();
+    };
+
+    task();
 
     io.run();
 

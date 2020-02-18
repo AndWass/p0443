@@ -31,3 +31,18 @@ buildSamples:
       short: Don't build samples
       settings:
         P0443_BUILD_SAMPLES: no
+enableCoro:
+  default: 'no'
+  choices:
+    'yes':
+      short: Enable coroutines
+      long: Build coroutine samples and tests
+      settings:
+        P0443_BUILD_CORO_TESTS: yes
+        P0443_BUILD_CORO_SAMPLES: yes
+    'no':
+      short: Disable coroutines
+      long: Do not build coroutine samples and tests
+      settings:
+        P0443_BUILD_CORO_TESTS: no
+        P0443_BUILD_CORO_SAMPLES: no

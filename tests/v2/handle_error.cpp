@@ -7,6 +7,7 @@
 
 #include <doctest/doctest.h>
 #include <stdexcept>
+#include <string>
 
 TEST_CASE("handle_error: passes through a single value") {
     int value = 0;
@@ -39,6 +40,7 @@ TEST_CASE("handle_error: submits the returned sender on error") {
         std::rethrow_exception(error);
     }
     catch (std::exception &e) {
-        REQUIRE(e.what() == std::string("test"));
+        std::string expected = "test";
+        REQUIRE(e.what() == expected);
     }
 }
