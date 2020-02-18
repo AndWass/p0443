@@ -11,6 +11,7 @@
 
 #include <p0443_v2/set_value.hpp>
 #include <p0443_v2/submit.hpp>
+#include <p0443_v2/connect.hpp>
 #include <p0443_v2/type_traits.hpp>
 #include <p0443_v2/sender_traits.hpp>
 
@@ -102,6 +103,11 @@ struct let_sender
     template <class Receiver>
     void submit(Receiver &&receiver) {
         p0443_v2::submit(sender_, let_receiver<Receiver, Function>(std::forward<Receiver>(receiver), std::move(function_)));
+    }
+
+    template<class Receiver>
+    auto connect(Receiver &&receiver) {
+        return p0443_v2::connect(sender_, let_receiver<Receiver, Function>(std::forward<Receiver>(receiver), std::move(function_)));
     }
 };
 } // namespace detail

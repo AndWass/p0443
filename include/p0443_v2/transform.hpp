@@ -9,6 +9,8 @@
 #include <p0443_v2/sender_traits.hpp>
 #include <p0443_v2/submit.hpp>
 #include <p0443_v2/type_traits.hpp>
+#include <p0443_v2/connect.hpp>
+#include <p0443_v2/start.hpp>
 
 #include <exception>
 #include <utility>
@@ -68,6 +70,19 @@ struct transform_op
         }
     };
 
+    template<class Receiver>
+    struct operation_state
+    {
+        using next_operation_state = std::decay_t<decltype(p0443_v2::connect(std::declval<sender_type>(), std::declval<receiver<Receiver>>()))>;
+        next_operation_state state_;
+
+        operation_state(sender_type&& sender, receiver<Receiver>&& receiver): state_(p0443_v2::connect(std::move(sender), std::move(receiver))) {}
+
+        void start() {
+            p0443_v2::start(state_);
+        }
+    };
+
     sender_type sender_;
     function_type function_;
 
@@ -91,6 +106,11 @@ struct transform_op
     template <class Receiver>
     void submit(Receiver &&rx) {
         p0443_v2::submit(sender_, receiver<Receiver>(std::forward<Receiver>(rx), function_));
+    }
+
+    template<class Receiver>
+    auto connect(Receiver &&recv) {
+        return operation_state<Receiver>(std::move(sender_), receiver<Receiver>(std::forward<Receiver>(recv), function_));
     }
 
     template <class S, class Fn>

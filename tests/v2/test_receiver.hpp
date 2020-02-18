@@ -63,6 +63,18 @@ struct test_sender
     {
         p0443_v2::set_value(rcv);
     }
+
+    template<class Receiver>
+    auto connect(Receiver &&receiver) {
+        struct operation_state
+        {
+            p0443_v2::remove_cvref_t<Receiver> receiver_;
+            void start() {
+                p0443_v2::set_value(std::move(receiver_));
+            }
+        };
+        return operation_state{std::forward<Receiver>(receiver)};
+    }
 };
 
 struct conditional_sender
