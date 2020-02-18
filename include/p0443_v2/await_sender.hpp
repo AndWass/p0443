@@ -118,7 +118,7 @@ struct await_sender
         };
 
         bool await_suspend(stdcoro::coroutine_handle<> suspended_coro) {
-            stored_operation_ = p0443_v2::connect(std::move(sender_), awaitable_receiver(this));
+            stored_operation_.emplace(p0443_v2::connect(std::move(sender_), awaitable_receiver(this)));
             p0443_v2::start(*stored_operation_);
             return try_set_continuation(suspended_coro);
         }
