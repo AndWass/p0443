@@ -23,7 +23,7 @@ TEST_CASE("asio_coro: connect to local endpoint") {
 
     bool done = false;
 
-    auto task = [&]() -> immediate_task {
+    [&]() -> immediate_task {
         tcp::socket socket(io);
         tcp::endpoint local(boost::asio::ip::address::from_string("127.0.0.1"), 12345);
         auto ep = co_await p0443_v2::await_sender(p0443_v2::asio::connect(socket, local));
@@ -38,9 +38,10 @@ TEST_CASE("asio_coro: connect to local endpoint") {
 
 TEST_CASE("asio_coro: resolve and connect to google") {
     using tcp = boost::asio::ip::tcp;
+
     boost::asio::io_context io;
     bool done = false;
-    auto task = [&]() -> immediate_task {
+    [&]() -> immediate_task {
         tcp::resolver resolver(io);
         auto result = co_await p0443_v2::await_sender(p0443_v2::asio::resolve(resolver, "www.google.se", "https"));
         tcp::socket socket(io);

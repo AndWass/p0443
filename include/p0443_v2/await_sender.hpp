@@ -135,7 +135,7 @@ struct await_sender
             else if (values_.index() == 2) {
                 std::visit(error_visitor{}, std::get<2>(values_));
             }
-            return std::get<1>(values_);
+            return std::get<1>(std::move(values_));
         }
     };
 

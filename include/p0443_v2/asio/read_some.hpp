@@ -40,6 +40,30 @@ struct read_some_sender
             }
         });
     }
+
+    template<class Receiver>
+    struct operation_state
+    {
+        Receiver receiver_;
+        Stream *stream_;
+        boost::asio::mutable_buffer buffer_;
+
+        void start() {
+            stream_->async_read_some(buffer_, [recv = std::forward<Receiver>(receiver_)](const auto &ec, std::size_t bytes_read) mutable {
+                if(!ec) {
+                    p0443_v2::set_value(std::move(recv), bytes_read);
+                }
+                else {
+                    p0443_v2::set_done(std::move(recv));
+                }
+            });
+        }
+    };
+
+    template<class Receiver>
+    auto connect(Receiver&& receiver) {
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), stream_, buffer_};
+    }
 };
 
 struct read_some_cpo

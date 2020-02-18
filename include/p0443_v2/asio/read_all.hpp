@@ -20,7 +20,7 @@ struct read_all_sender
     using value_types = Variant<Tuple<std::size_t>>;
 
     template<template<class...> class Variant>
-    using error_types = Variant<>;
+    using error_types = Variant<std::exception_ptr>;
 
     static constexpr bool sends_done = true;
 
@@ -40,6 +40,30 @@ struct read_all_sender
                 p0443_v2::set_done(std::move(recv));
             }
         });
+    }
+
+    template<class Receiver>
+    struct operation_state
+    {
+        Receiver receiver_;
+        Stream *stream_;
+        boost::asio::mutable_buffer buffer_;
+
+        void start() {
+            boost::asio::async_read(*stream_, buffer_, [recv = std::move(receiver_)](const auto &ec, std::size_t bytes_read) mutable {
+                if(!ec) {
+                    p0443_v2::set_value(std::move(recv), bytes_read);
+                }
+                else {
+                    p0443_v2::set_done(std::move(recv));
+                }
+            });
+        }
+    };
+
+    template<class Receiver>
+    auto connect(Receiver&& receiver) {
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), stream_, buffer_};
     }
 };
 
