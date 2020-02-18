@@ -15,11 +15,6 @@
 #include <p0443_v2/asio/resolve.hpp>
 #include <p0443_v2/asio/connect.hpp>
 
-#include <p0443_v2/sink_receiver.hpp>
-#include <p0443_v2/submit_while.hpp>
-#include <p0443_v2/transform.hpp>
-#include <p0443_v2/with.hpp>
-
 #include <p0443_v2/immediate_task.hpp>
 
 #include "chat_message.hpp"

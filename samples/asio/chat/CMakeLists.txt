@@ -19,4 +19,7 @@ set_exec_props(samples-asio-chat-client)
 if(P0443_BUILD_CORO_SAMPLES)
     add_executable(samples-coro-asio-chat-client coro-chat-client.cpp)
     set_exec_props(samples-coro-asio-chat-client)
+
+    add_executable(samples-coro-asio-chat-server coro-chat-server.cpp)
+    set_exec_props(samples-coro-asio-chat-server)
 endif()
