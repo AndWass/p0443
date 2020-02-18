@@ -60,6 +60,7 @@ private:
                     send_queue_.erase(send_queue_.begin());
                     co_await p0443_v2::await_sender(to_send.deliver(socket_));
                 }
+                is_writing_ = false;
             }
         }
         catch(...) {}
