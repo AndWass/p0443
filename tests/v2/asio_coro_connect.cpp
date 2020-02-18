@@ -36,7 +36,7 @@ TEST_CASE("asio_coro: connect to local endpoint") {
     REQUIRE(done);
 }
 
-TEST_CASE("connect to local endpoint") {
+TEST_CASE("asio_coro: resolve and connect to google") {
     using tcp = boost::asio::ip::tcp;
     boost::asio::io_context io;
     bool done = false;
