@@ -19,6 +19,7 @@
 #include <memory>
 #include <utility>
 #include <optional>
+#include <atomic>
 
 namespace p0443_v2
 {
@@ -43,7 +44,10 @@ struct when_all_op
         >
     >;
 
-    static constexpr bool sends_done = (p0443_v2::sender_traits<Senders>::sends_done || ...);
+    //static constexpr bool sends_done = (p0443_v2::sender_traits<Senders>::sends_done || ...);
+    static constexpr bool sends_done = std::disjunction<
+        std::bool_constant<p0443_v2::sender_traits<Senders>::sends_done>...
+    >::value;
 
     template <class Receiver>
     struct receiver
@@ -123,6 +127,83 @@ struct when_all_op
             p0443_v2::submit(rx, receiver<Receiver>(shared_state));
         });
     }
+
+    template<class Receiver>
+    struct operation_state
+    {
+        /*struct operation_receiver
+        {
+            operation_state* state_;
+
+            template<class...Values>
+            void set_value(Values&&...values) {
+                auto value = state_->waiting_for_.load();
+                if(value == 0) {
+                    return;
+                }
+
+                while(!state_->waiting_for_.compare_exchange_strong(value, value-1, std::memory_order_acq_rel))
+                {
+                    if(value == 0) {
+                        return;
+                    }
+                }
+                if(value == 1) {
+                    p0443_v2::set_value(std::move(state_->second_receiver_), std::forward<Values>(values)...);
+                }
+            }
+
+            void set_done() {
+                auto value = state_->waiting_for_.load();
+                if(value == 0) {
+                    return;
+                }
+                while(!state_->waiting_for_.compare_exchange_strong(value, 0, std::memory_order_acq_rel))
+                {
+                    if(value == 0) {
+                        return;
+                    }
+                }
+                if(value != 0) {
+                    p0443_v2::set_done(std::move(state_->second_receiver_), std::forward<Values>(values)...);
+                }
+            }
+
+            void set_error() {
+                auto value = state_->waiting_for_.load();
+                if(value == 0) {
+                    return;
+                }
+                while(!state_->waiting_for_.compare_exchange_strong(value, 0, std::memory_order_acq_rel))
+                {
+                    if(value == 0) {
+                        return;
+                    }
+                }
+                if(value != 0) {
+                    p0443_v2::set_done(std::move(state_->second_receiver_), std::forward<Values>(values)...);
+                }
+            }
+        };
+
+        using operation_storage = std::tuple<
+            decltype(p0443_v2::connect(std::declval<Sender&&>(), std::declval<operation_receiver&&>()))...
+        >;
+        operation_storage sub_operations_;
+        Receiver second_receiver_;
+        std::atomic_int waiting_for_{int(sizeof...(Senders))};
+
+        operation_state(senders_storage&& senders, Receiver&& receiver): senders_(std::move(senders)), second_receiver_(std::move(receiver)) {}
+
+        void start() {
+
+        }*/
+    };
+
+    /*template<class Receiver>
+    auto connect(Receiver&& receiver) {
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>(std::forward<Receiver>(receiver));
+    }*/
 };
 } // namespace detail
 

@@ -73,7 +73,7 @@ struct transform_op
     template<class Receiver>
     struct operation_state
     {
-        using next_operation_state = std::decay_t<decltype(p0443_v2::connect(std::declval<sender_type>(), std::declval<receiver<Receiver>>()))>;
+        using next_operation_state = decltype(p0443_v2::connect(std::declval<sender_type>(), std::declval<receiver<Receiver>>()));
         next_operation_state state_;
 
         operation_state(sender_type&& sender, receiver<Receiver>&& receiver): state_(p0443_v2::connect(std::move(sender), std::move(receiver))) {}

@@ -65,15 +65,17 @@ struct test_sender
     }
 
     template<class Receiver>
+    struct operation_state
+    {
+        Receiver receiver_;
+        void start() {
+            p0443_v2::set_value(std::move(receiver_));
+        }
+    };
+
+    template<class Receiver>
     auto connect(Receiver &&receiver) {
-        struct operation_state
-        {
-            p0443_v2::remove_cvref_t<Receiver> receiver_;
-            void start() {
-                p0443_v2::set_value(std::move(receiver_));
-            }
-        };
-        return operation_state{std::forward<Receiver>(receiver)};
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver)};
     }
 };
 
@@ -101,6 +103,8 @@ struct value_sender
     template<template<class...> class Variant>
     using error_types = Variant<>;
 
+    static constexpr bool sends_done = false;
+
     template<class...Vs>
     value_sender(Vs&&... v): val_(std::forward<Vs>(v)...) {}
 
@@ -114,6 +118,8 @@ struct value_sender
 template<class Value>
 struct value_sender<Value>
 {
+    static constexpr bool sends_done = false;
+    
     Value val_;
     value_sender(Value v): val_(v) {}
 

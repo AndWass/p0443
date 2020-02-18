@@ -82,7 +82,8 @@
         "xutility": "cpp",
         "strstream": "cpp",
         "valarray": "cpp",
-        "xxatomic": "cpp"
+        "xxatomic": "cpp",
+        "resumable": "cpp"
     },
     "restructuredtext.confPath": ""
 }

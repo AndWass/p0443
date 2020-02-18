@@ -56,6 +56,12 @@ struct flattened_value_type<Variant<Tuple<Type>>>
     using type = Type;
 };
 
+template<template<class...> class Tuple, template<class...> class Variant, class...Types>
+struct flattened_value_type<Variant<Tuple<Types...>>>
+{
+    using type = Tuple<Types...>;
+};
+
 template <class Sender>
 struct sender_traits_base<Sender, true>
 {

@@ -39,11 +39,6 @@ TEST_CASE("let: multiple values have extended lifetime") {
     REQUIRE(*ptr2 == world);
 }
 
-template<class T>
-const char* fn2() {
-    return __PRETTY_FUNCTION__;
-}
-
 struct multi_type_sender
 {
     template<template<class...> class Tuple, template<class...> class Variant>
@@ -51,6 +46,8 @@ struct multi_type_sender
 
     template<template<class...> class Variant>
     using error_types = Variant<std::exception_ptr>;
+
+    static constexpr bool sends_done = false;
 
     template<class R>
     void submit(R&& r) {}
@@ -70,17 +67,3 @@ struct multi_receiver_transform
         return p0443_v2::just(std::tuple<>{});
     }
 };
-
-TEST_CASE("let: static asserts") {
-    auto fn = [](int) { return p0443_v2::just(true); };
-    using just_type = decltype(p0443_v2::just(0));
-    using let_type = decltype(p0443_v2::let(std::declval<multi_type_sender>(), std::declval<multi_receiver_transform>()));
-
-    /*static_assert(std::is_same_v<
-                    std::variant<std::tuple<bool>>,
-                    typename p0443_v2::sender_traits<let_type>::template value_types<std::tuple, std::variant>
-                  >);*/
-    //std::cout << fn2<let_type::resulting_senders>() << std::endl;
-    std::cout << fn2<p0443_v2::function_result_types<std::variant, let_type::function_type, let_type::sender_type>>() << std::endl;
-    std::cout << fn2<typename p0443_v2::sender_traits<let_type>::template value_types<std::tuple, std::variant>>() << std::endl;
-}

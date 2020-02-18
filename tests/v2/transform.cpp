@@ -21,11 +21,6 @@ TEST_CASE("transform: basic transform") {
     REQUIRE(submitted);
 }
 
-template <class T>
-const char *pretty_function() {
-    return __PRETTY_FUNCTION__;
-}
-
 namespace test_detail
 {
 struct sender
@@ -35,6 +30,8 @@ struct sender
 
     template <template <class...> class Variant>
     using error_types = Variant<>;
+
+    static constexpr bool sends_done = false;
 
     template <class R>
     void submit(R &&){};
@@ -48,13 +45,6 @@ struct function
     float operator()(float);
 };
 } // namespace test_detail
-
-TEST_CASE("transform: value_types") {
-    using transform_type = decltype(p0443_v2::transform(test_detail::sender{}, test_detail::function{}));
-    std::cout << pretty_function<
-        typename transform_type::template value_types<std::tuple, std::variant>
-        >() << std::endl;
-}
 
 TEST_CASE("when_any: basic functionality") {
     bool first_called = false;
@@ -148,8 +138,6 @@ TEST_CASE("when_all: basic functionality") {
     REQUIRE(first_called);
     REQUIRE(second_called);
     REQUIRE(third_called);
-
-    std::cout << pretty_function<typename decltype(p0443_v2::when_all(first, second, third))::value_types<std::tuple, std::variant>>() << std::endl;
 }
 
 TEST_CASE("when_all: with values") {
@@ -188,9 +176,4 @@ TEST_CASE("when_all: with values") {
     REQUIRE(first_called);
     REQUIRE(second_called);
     REQUIRE(third_called);
-}
-
-TEST_CASE("when_all: value_types")
-{
-    std::cout << pretty_function<typename decltype(p0443_v2::when_all(p0443_v2::just(), p0443_v2::just(true), p0443_v2::just(20.0f, false)))::value_types<std::tuple, std::variant>>() << std::endl;
 }

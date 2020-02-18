@@ -1,4 +1,5 @@
-add_executable(p0443-tests
+
+set(sources
     main.cpp
     execution.cpp
     task.cpp
@@ -13,6 +14,16 @@ add_executable(p0443-tests
     v2/just.cpp
     v2/sender_traits.cpp
     v2/sequence.cpp
+)
+
+if(P0443_BUILD_CORO_TESTS)
+    list(APPEND sources
+        v2/await_sender.cpp
+    )
+endif()
+
+add_executable(p0443-tests
+    ${sources}
 )
 
 target_link_libraries(p0443-tests PRIVATE p0443

@@ -43,7 +43,9 @@ struct when_any_op
         >
     >;
 
-    static constexpr bool sends_done = (p0443_v2::sender_traits<Senders>::sends_done || ...);
+    static constexpr bool sends_done = std::disjunction<
+        std::bool_constant<p0443_v2::sender_traits<Senders>::sends_done>...
+    >::value;
 
     template<class Receiver>
     struct receiver

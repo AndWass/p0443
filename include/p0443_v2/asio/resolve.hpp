@@ -29,7 +29,7 @@ struct resolve
     template<template<class...> class Variant>
     using error_types = Variant<>;
 
-    static constexpr bool sets_done =  true;
+    static constexpr bool sends_done =  true;
 
     template <class Receiver>
     void submit(Receiver &&recv) {

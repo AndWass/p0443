@@ -10,7 +10,6 @@
 #include <tuple>
 #include <utility>
 #include <variant>
-#include <iostream>
 
 #include <p0443_v2/sender_traits.hpp>
 #include <p0443_v2/sender_value_type.hpp>

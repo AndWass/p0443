@@ -45,6 +45,8 @@ struct value_sender {
 
     template<template<class...> class Variant>
     using error_types = Variant<>;
+
+    static constexpr bool sends_done = false;
 };
 
 static_assert(std::is_same_v<
@@ -66,12 +68,3 @@ static_assert(std::is_same_v<
     std::variant<std::tuple<int, bool>, std::tuple<int, double>>,
     p0443_v2::merge_sender_value_types<std::tuple, std::variant, value_sender<int, bool>, value_sender<int, double>>
 >);
-
-template<class T>
-const char* fn() {
-    return __PRETTY_FUNCTION__;
-}
-
-TEST_CASE("sender_traits: test")
-{
-}
