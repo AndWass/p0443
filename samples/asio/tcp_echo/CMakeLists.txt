@@ -11,9 +11,11 @@ function(set_exec_props target)
 endfunction(set_exec_props)
 
 add_executable(samples-asio-tcp-echo-server tcp_echo_server.cpp)
+add_executable(samples-asio-tcp-echo-server-stack-only tcp_echo_server_stack_only.cpp)
 add_executable(samples-asio-tcp-echo-client tcp_echo_client.cpp)
 
 set_exec_props(samples-asio-tcp-echo-server)
+set_exec_props(samples-asio-tcp-echo-server-stack-only)
 set_exec_props(samples-asio-tcp-echo-client)
 
 if(P0443_BUILD_CORO_SAMPLES)
