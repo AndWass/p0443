@@ -6,6 +6,10 @@ buildType:
       short: Debug
       long: Build with debugging information
       buildType: Debug
+    release:
+      short: Release
+      long: Release build
+      buildType: Release
 
 buildTests:
   default: 'yes'
