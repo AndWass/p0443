@@ -157,14 +157,14 @@ int main(int argc, char **argv) {
             printf("Listening on %d\n", (int)acceptor.local_endpoint().port());
             fflush(stdout);
 
-            auto socket_handler = [&](net::ip::tcp::socket &socket) {
+            auto socket_handler = [&current_room](net::ip::tcp::socket &socket) {
                 auto address = socket.remote_endpoint().address().to_string();
 
                 printf("Connection from %s:%d\n", address.c_str(),
                        (int)socket.remote_endpoint().port());
                 fflush(stdout);
 
-                auto participant_handler = [&](chat_participant &participant) {
+                auto participant_handler = [&socket, &current_room](chat_participant &participant) {
                     return current_room.participant_handler_for(participant);
                 };
                 p0443_v2::submit(
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
                 return true;
             };
 
-            return p0443_v2::submit_while([&] { return p0443_v2::asio::accept(acceptor); },
+            return p0443_v2::submit_while([&acceptor] { return p0443_v2::asio::accept(acceptor); },
                                           std::move(socket_handler));
         };
 
