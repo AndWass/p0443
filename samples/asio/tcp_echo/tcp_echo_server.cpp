@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
             // submit_while will continue to resubmit read_write_sender forever, unless
             // set_done is called
             auto forever = [] { return true; };
-            return p0443_v2::submit_while([&] { return read_write_sender; }, forever);
+            return p0443_v2::submit_while([retval = std::move(read_write_sender)] { return retval; }, forever);
         };
         auto socket_handler =
             p0443_v2::with(single_socket_function, std::move(socket), std::array<char, 128>{});
