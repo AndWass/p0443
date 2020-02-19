@@ -26,7 +26,7 @@ p0443_v2::immediate_task client_task(net::tcp::socket socket) {
               << ep.port() << "\n";
     try
     {
-        std::array<std::uint8_t, 256> buffer;
+        std::array<std::uint8_t, 128> buffer;
         while(true) {
             auto amount_read = co_await p0443_v2::await_sender(p0443_v2::asio::read_some(socket, boost::asio::buffer(buffer)));
             std::cout << "Read " << amount_read << std::endl;
