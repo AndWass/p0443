@@ -21,7 +21,7 @@ TEST_CASE("connect to local endpoint") {
 
     tcp::socket socket(io);
     tcp::endpoint local(boost::asio::ip::address::from_string("127.0.0.1"), 12345);
-    auto connect = p0443_v2::asio::connect(socket, local);
+    auto connect = p0443_v2::asio::connect_socket(socket, local);
 
     p0443_v2::submit(connect, p0443_v2::value_channel([&socket](tcp::socket::endpoint_type ep) {
                          REQUIRE(ep.port() == 12345);
@@ -40,7 +40,7 @@ TEST_CASE("connect to local endpoint") {
                       [&](tcp::resolver::results_type &results) {
                           // Results will continue to live for the duration of
                           // the connect sender
-                          return p0443_v2::asio::connect(socket, results);
+                          return p0443_v2::asio::connect_socket(socket, results);
                       });
 
     p0443_v2::submit(resolve_connect, p0443_v2::value_channel([&](tcp::socket::endpoint_type ep) {

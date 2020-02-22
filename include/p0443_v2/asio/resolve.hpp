@@ -17,8 +17,6 @@
 
 namespace p0443_v2::asio
 {
-namespace detail
-{
 struct resolve
 {
     //using value_type = boost::asio::ip::tcp::resolver::results_type;
@@ -95,6 +93,4 @@ struct resolve
     boost::asio::ip::tcp::resolver *resolv_;
     std::string host_, service_;
 };
-} // namespace detail
-using resolve = detail::resolve;
 } // namespace p0443_v2::asio

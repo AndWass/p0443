@@ -11,10 +11,8 @@
 
 namespace p0443_v2::asio
 {
-namespace detail
-{
 template<class Stream>
-struct read_all_sender
+struct read_all
 {
     template<template<class...> class Tuple, template<class...> class Variant>
     using value_types = Variant<Tuple<std::size_t>>;
@@ -28,7 +26,7 @@ struct read_all_sender
     boost::asio::mutable_buffer buffer_;
 
     template<class Buffer>
-    read_all_sender(Stream& stream, Buffer&& buffer): stream_(&stream), buffer_(buffer) {}
+    read_all(Stream& stream, Buffer&& buffer): stream_(&stream), buffer_(buffer) {}
 
     template<class Receiver>
     void submit(Receiver &&recv) {
@@ -66,14 +64,4 @@ struct read_all_sender
         return operation_state<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), stream_, buffer_};
     }
 };
-
-struct read_all_cpo
-{
-    template<class Stream, class Buffer>
-    auto operator()(Stream &stream, Buffer &&buffer) const {
-        return read_all_sender<Stream>(stream, std::forward<Buffer>(buffer));
-    }
-};
-}
-constexpr detail::read_all_cpo read_all;
 }

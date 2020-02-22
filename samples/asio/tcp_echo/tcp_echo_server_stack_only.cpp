@@ -76,13 +76,10 @@ private:
         echo_server *server_;
         std::array<std::uint8_t, 64> buffer_;
 
-        using read_operation_t = operation_type_t<decltype(p0443_v2::asio::read_some(
-                                                      std::declval<socket_type&>(),
-                                                      std::declval<boost::asio::mutable_buffer>())),
+        using read_operation_t = operation_type_t<p0443_v2::asio::read_some<socket_type>,
                                                   read_some_receiver>;
         using write_operation_t = operation_type_t<
-            decltype(p0443_v2::asio::write_all(std::declval<socket_type&>(),
-                std::declval<boost::asio::const_buffer>())),
+            p0443_v2::asio::write_all<socket_type>,
             write_all_receiver
         >;
 

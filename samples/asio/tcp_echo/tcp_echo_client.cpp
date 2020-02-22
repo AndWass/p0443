@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
     auto resolve_connect = [](auto &resolver, auto &socket, auto host, auto service) {
         return p0443_v2::then(p0443_v2::asio::resolve(resolver, host, service), [&](auto &eps) {
-            return p0443_v2::asio::connect(socket, eps);
+            return p0443_v2::asio::connect_socket(socket, eps);
         });
     };
 
