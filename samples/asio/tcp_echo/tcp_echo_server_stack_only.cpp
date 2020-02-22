@@ -77,7 +77,7 @@ private:
         std::array<std::uint8_t, 64> buffer_;
 
         using read_operation_t = operation_type_t<decltype(p0443_v2::asio::read_some(
-                                                      std::declval<socket_type>(),
+                                                      std::declval<socket_type&>(),
                                                       std::declval<boost::asio::mutable_buffer>())),
                                                   read_some_receiver>;
         using write_operation_t = operation_type_t<
@@ -100,14 +100,14 @@ private:
         }
 
         void start_read() {
-            operation_states_.template emplace<1>(
+            operation_states_.emplace<1>(
                 p0443_v2::connect(p0443_v2::asio::read_some(socket_, boost::asio::buffer(buffer_)),
                                   read_some_receiver{this}));
             p0443_v2::start(std::get<1>(operation_states_));
         }
 
         void start_write(std::size_t amount) {
-            operation_states_.template emplace<2>(
+            operation_states_.emplace<2>(
                 p0443_v2::connect(p0443_v2::asio::write_all(socket_, boost::asio::buffer(buffer_.data(), amount)),
                                   write_all_receiver{this})
             );
