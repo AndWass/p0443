@@ -24,10 +24,6 @@
 
 using socket_type = boost::asio::ip::tcp::socket;
 
-template <class Sender, class Receiver>
-using operation_type_t =
-    decltype(p0443_v2::connect(std::declval<Sender>(), std::declval<Receiver>()));
-
 struct echo_server
 {
 public:
@@ -76,9 +72,9 @@ private:
         echo_server *server_;
         std::array<std::uint8_t, 64> buffer_;
 
-        using read_operation_t = operation_type_t<p0443_v2::asio::read_some<socket_type>,
+        using read_operation_t = p0443_v2::operation_type<p0443_v2::asio::read_some<socket_type>,
                                                   read_some_receiver>;
-        using write_operation_t = operation_type_t<
+        using write_operation_t = p0443_v2::operation_type<
             p0443_v2::asio::write_all<socket_type>,
             write_all_receiver
         >;
@@ -132,7 +128,7 @@ private:
         echo_server *server_;
     };
 
-    using connect_op_type = operation_type_t<p0443_v2::asio::accept &&, accept_receiver &&>;
+    using connect_op_type = p0443_v2::operation_type<p0443_v2::asio::accept &&, accept_receiver &&>;
 
     boost::asio::io_context io_;
     boost::asio::ip::tcp::acceptor acceptor_;

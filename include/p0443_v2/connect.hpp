@@ -44,4 +44,8 @@ struct connect_cpo
 };
 }
 constexpr detail::connect_cpo connect;
+
+template <class Sender, class Receiver>
+using operation_type =
+    decltype(p0443_v2::connect(std::declval<Sender>(), std::declval<Receiver>()));
 }
