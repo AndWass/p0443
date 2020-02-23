@@ -77,8 +77,10 @@ struct just_sender<>
 {
     template<template<class...> class Tuple, template<class...> class Variant>
     using value_types = Variant<Tuple<>>;
+
     template<template<class...> class Variant>
     using error_types = Variant<std::exception_ptr>;
+
     static constexpr bool sends_done = false;
 
     template <class Receiver>
@@ -108,7 +110,7 @@ struct just_sender<>
 
     template <class Receiver>
     auto connect(Receiver &&recv) {
-        return just_operation<std::decay_t<Receiver>>{std::forward<Receiver>(recv)};
+        return just_operation<p0443_v2::remove_cvref_t<Receiver>>{std::forward<Receiver>(recv)};
     }
 };
 } // namespace detail

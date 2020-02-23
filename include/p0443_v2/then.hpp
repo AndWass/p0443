@@ -6,9 +6,13 @@
 
 #pragma once
 
-#include <p0443_v2/connect.hpp>
-#include <p0443_v2/submit.hpp>
+#include <optional>
 #include <type_traits>
+#include <variant>
+
+#include <p0443_v2/connect.hpp>
+#include <p0443_v2/start.hpp>
+#include <p0443_v2/submit.hpp>
 
 #include <p0443_v2/sender_traits.hpp>
 
@@ -60,6 +64,40 @@ struct then_sender : Sender
     static constexpr bool sends_done = p0443_v2::sender_traits<Sender>::sends_done;
 
     template <class Receiver>
+    struct connected_receiver
+    {
+        template <template <class...> class Variant>
+        using possible_senders = p0443_v2::function_result_types<Variant, Function, Sender>;
+
+        template <class S>
+        using operation_transformer = p0443_v2::operation_type<S, Receiver>;
+
+        template <template <class...> class Variant>
+        using possible_connections =
+            boost::mp11::mp_transform<operation_transformer, possible_senders<Variant>>;
+
+        Receiver next_;
+        Function function_;
+        std::optional<possible_connections<std::variant>> next_operation;
+
+        template <class... Values>
+        void set_value(Values &&... values) {
+            next_operation.emplace(
+                p0443_v2::connect(function_(std::forward<Values>(values)...), (Receiver &&) next_));
+            std::visit([](auto &op) { p0443_v2::start(op); }, *next_operation);
+        }
+
+        void set_done() {
+            p0443_v2::set_done((Receiver&&)next_);
+        }
+
+        template<class E>
+        void set_error(E&& e) {
+            p0443_v2::set_error((Receiver&&)next_, std::forward<E>(e));
+        }
+    };
+
+    template <class Receiver>
     void submit(Receiver &&recv) {
         using receiver_t = std::decay_t<Receiver>;
         p0443_v2::submit((Sender &&) * this, then_receiver<receiver_t, Function>{
@@ -68,16 +106,15 @@ struct then_sender : Sender
 
     template <class Receiver>
     auto connect(Receiver &&receiver) {
-        return p0443_v2::connect((Sender &&) * this,
-                                 then_receiver<p0443_v2::remove_cvref_t<Receiver>, Function>{
-                                     (Receiver &&) receiver, std::move(function_)});
+        return p0443_v2::connect((Sender&&)*this, connected_receiver<p0443_v2::remove_cvref_t<Receiver>>{
+            std::forward<Receiver>(receiver), std::move(function_)});
     }
 };
 
 struct then_cpo
 {
     template <class Sender, class Function>
-    auto operator()(Sender &&sender, Function &&fn) const {
+    auto operator()(Sender && sender, Function && fn) const {
         using sender_t = std::decay_t<Sender>;
         using function_t = std::decay_t<Function>;
 

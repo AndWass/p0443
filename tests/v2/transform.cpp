@@ -1,8 +1,9 @@
 #include <p0443/immediate_executor.hpp>
+#include <p0443_v2/just.hpp>
 #include <p0443_v2/transform.hpp>
 #include <p0443_v2/when_all.hpp>
 #include <p0443_v2/when_any.hpp>
-#include <p0443_v2/just.hpp>
+#include <p0443_v2/then.hpp>
 
 #include <doctest/doctest.h>
 #include <iostream>
@@ -176,4 +177,45 @@ TEST_CASE("when_all: with values") {
     REQUIRE(first_called);
     REQUIRE(second_called);
     REQUIRE(third_called);
+}
+
+struct only_connect_sender
+{
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<int>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<std::exception_ptr>;
+
+    static constexpr bool sends_done = false;
+
+    template <class Receiver>
+    auto connect(Receiver &&receiver) {
+        using receiver_t = p0443_v2::remove_cvref_t<Receiver>;
+        struct operation
+        {
+            receiver_t recv;
+            void start() {
+                p0443_v2::set_value(recv, 10);
+            }
+        };
+
+        return operation {
+            std::forward<Receiver>(receiver)
+        };
+    }
+};
+
+TEST_CASE("then without submit") {
+    int val = 0;
+    auto test = p0443_v2::then(only_connect_sender{}, [&](int i) {
+        val = i;
+        return p0443_v2::just();
+    });
+
+    test_receiver recv;
+
+    auto op = p0443_v2::connect(std::move(test), recv);
+    p0443_v2::start(op);
+    REQUIRE(val == 10);
 }
