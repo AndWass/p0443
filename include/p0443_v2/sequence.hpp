@@ -74,11 +74,11 @@ struct sequence_sender<S1, S2>
                 // this will be destroyed below! Only use local variables!!!
                 auto *state = state_;
                 try {
-                    state->state_.template emplace<1>(
+                    auto &ref = state->state_.template emplace<1>(
                         p0443_v2::connect(state_->second_sender_, second_receiver(state)));
                     auto index = state->state_.index();
                     auto valueless = state->state_.valueless_by_exception();
-                    p0443_v2::start(std::get<1>(state->state_));
+                    p0443_v2::start(ref);
                 }
                 catch (...) {
                     p0443_v2::set_error(state->receiver_, std::current_exception());
