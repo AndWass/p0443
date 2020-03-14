@@ -151,10 +151,10 @@ struct function_result_types_helper
     template<template<class...> class Tuple, class...ValueT>
     struct is_applyable<Tuple<ValueT...>>
     {
-        static constexpr bool value = std::is_invocable_v<Function, ValueT...>;
+        static constexpr bool value = std::is_invocable_v<Function, ValueT&...>;
     };
     template<class Tuple>
-    using apply_result = decltype(std::apply(std::declval<Function>(), std::declval<Tuple>()));
+    using apply_result = decltype(std::apply(std::declval<Function>(), std::declval<Tuple&>()));
 
     template<class Tuple>
     using not_applyable = std::negation<is_applyable<Tuple>>;
