@@ -49,7 +49,7 @@ struct sequence_sender<S1, S2>
             }
 
             template <class... Values>
-            void set_value(Values &&...values) {
+            void set_value(Values &&... values) {
                 p0443_v2::set_value(std::move(state_->receiver_), std::forward<Values>(values)...);
             }
 
@@ -95,22 +95,25 @@ struct sequence_sender<S1, S2>
             }
         };
 
-        operation_state(S1&& first, S2&& second, Receiver receiver):
-            second_sender_(std::move(second)),
-            receiver_(std::move(receiver)),
-            state_(std::in_place_index<0>, p0443_v2::connect(std::move(first), first_receiver(this))) {}
-        
+        operation_state(S1 &&first, S2 &&second, Receiver receiver)
+            : first_sender_(std::move(first)), second_sender_(std::move(second)),
+              receiver_(std::move(receiver)), state_(std::in_place_index<2>) {
+        }
+
         void start() {
-            p0443_v2::start(std::get<0>(state_));
+            auto &ref = state_.template emplace<0>(
+                p0443_v2::connect(std::move(first_sender_), first_receiver(this)));
+            p0443_v2::start(ref);
         }
 
         using first_connect_type = p0443_v2::remove_cvref_t<decltype(
-            p0443_v2::connect(std::declval<S1&&>(), std::declval<first_receiver&&>()))>;
+            p0443_v2::connect(std::declval<S1 &&>(), std::declval<first_receiver &&>()))>;
         using second_connect_type = p0443_v2::remove_cvref_t<decltype(
-            p0443_v2::connect(std::declval<S2&>(), std::declval<second_receiver&&>()))>;
+            p0443_v2::connect(std::declval<S2 &>(), std::declval<second_receiver &&>()))>;
+        p0443_v2::remove_cvref_t<S1> first_sender_;
         p0443_v2::remove_cvref_t<S2> second_sender_;
         Receiver receiver_;
-        std::variant<first_connect_type, second_connect_type> state_;
+        std::variant<first_connect_type, second_connect_type, std::monostate> state_;
     };
 
     template <class Receiver>
@@ -158,7 +161,8 @@ struct sequence_sender<S1, S2>
 
     template <class Receiver>
     auto connect(Receiver &&receiver) {
-        return operation_state<p0443_v2::remove_cvref_t<Receiver>>(std::move(first_), std::move(second_), std::move(receiver));
+        return operation_state<p0443_v2::remove_cvref_t<Receiver>>(
+            std::move(first_), std::move(second_), std::move(receiver));
     }
 };
 } // namespace detail
@@ -172,7 +176,8 @@ template <class S1, class... Senders>
 auto sequence(S1 &&s1, Senders &&... senders) {
     using next_type = decltype(::p0443_v2::sequence(std::forward<Senders>(senders)...));
     ;
-    return detail::sequence_sender<p0443_v2::remove_cvref_t<S1>, p0443_v2::remove_cvref_t<next_type>>(
+    return detail::sequence_sender<p0443_v2::remove_cvref_t<S1>,
+                                   p0443_v2::remove_cvref_t<next_type>>(
         std::forward<S1>(s1), ::p0443_v2::sequence(std::forward<Senders>(senders)...));
 }
 } // namespace p0443_v2
