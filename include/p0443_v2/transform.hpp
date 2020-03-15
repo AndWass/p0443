@@ -22,7 +22,7 @@ namespace p0443_v2
 namespace detail
 {
 template <class Sender, class Function>
-struct transform_op
+struct transform_sender
 {
     using sender_type = p0443_v2::remove_cvref_t<Sender>;
     using function_type = p0443_v2::remove_cvref_t<Function>;
@@ -114,7 +114,7 @@ struct transform_op
     }
 
     template <class S, class Fn>
-    transform_op(S &&sender, Fn &&fn)
+    transform_sender(S &&sender, Fn &&fn)
         : sender_(std::forward<S>(sender)), function_(std::forward<Fn>(fn)) {
     }
 };
@@ -123,7 +123,7 @@ struct transform_fn
 {
     template <class Sender, class Function>
     auto operator()(Sender && sender, Function && fn) const {
-        return ::p0443_v2::detail::transform_op<Sender, Function>(std::forward<Sender>(sender),
+        return ::p0443_v2::detail::transform_sender<Sender, Function>(std::forward<Sender>(sender),
                                                                   std::forward<Function>(fn));
     }
 };

@@ -34,6 +34,13 @@ struct handle_done_sender
                          handle_done_receiver<receiver_t, Function>{
                              std::forward<Receiver>(receiver), std::move(handler_)});
     }
+
+    template<class Receiver>
+    auto connect(Receiver&& receiver) {
+        using receiver_t = p0443_v2::remove_cvref_t<Receiver>;
+        return p0443_v2::connect(std::move(sender_), handle_done_receiver<receiver_t, Function>{
+                             std::forward<Receiver>(receiver), std::move(handler_)});
+    }
 };
 struct handle_done_cpo
 {

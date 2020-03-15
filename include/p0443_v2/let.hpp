@@ -8,39 +8,64 @@
 
 #include <memory>
 #include <tuple>
+#include <variant>
+#include <any>
 
 #include <p0443_v2/set_value.hpp>
 #include <p0443_v2/submit.hpp>
 #include <p0443_v2/connect.hpp>
 #include <p0443_v2/type_traits.hpp>
 #include <p0443_v2/sender_traits.hpp>
+#include <p0443_v2/start.hpp>
+
+#include <boost/mp11/algorithm.hpp>
 
 namespace p0443_v2
 {
 namespace detail
 {
-template <class Receiver, class Function>
-struct let_receiver : std::decay_t<Receiver>
+template <class Sender, class Receiver, class Function>
+struct let_receiver : Receiver
 {
     using receiver_type = std::decay_t<Receiver>;
     using function_type = remove_cvref_t<Function>;
 
-    template <class... Values>
-    struct life_extender : std::decay_t<Receiver>
+    template <class ValueTuple>
+    struct life_extender : Receiver
     {
-        using storage_type = std::tuple<std::decay_t<Values>...>;
-        using base_ = std::decay_t<Receiver>;
-        std::shared_ptr<storage_type> data_;
+        using base_ = p0443_v2::remove_cvref_t<Receiver>;
+        struct life_extended_data
+        {
+            ValueTuple data_;
+            std::any operation_;
+
+            template<class...Vs>
+            life_extended_data(Vs&&...vs): data_(std::forward<Vs>(vs)...) {}
+        };
+        std::shared_ptr<life_extended_data> data_;
 
         template <class R, class... Vs>
         explicit life_extender(R &&r, Vs &&... values)
             : base_(std::forward<R>(r)),
-              data_(std::make_shared<storage_type>(std::forward<Vs>(values)...)) {
+              data_(std::make_shared<life_extended_data>(std::forward<Vs>(values)...)) {
         }
 
         template <class Fn>
         auto call_with_arguments(Fn &&fn) {
-            return std::apply(std::forward<Fn>(fn), *data_);
+            return std::apply(std::forward<Fn>(fn), data_->data_);
+        }
+    };
+
+    template <>
+    struct life_extender<std::tuple<>> : Receiver
+    {
+        template <class R>
+        explicit life_extender(R &&r) : Receiver(std::forward<R>(r)) {
+        }
+
+        template <class Fn>
+        auto call_with_arguments(Fn &&fn) {
+            return fn();
         }
     };
 
@@ -53,16 +78,16 @@ struct let_receiver : std::decay_t<Receiver>
 
     template <class... Values>
     void set_value(Values &&... values) {
-        life_extender<Values...> extender((Receiver&&) * this,
-                                          std::forward<Values>(values)...);
+        using life_extender_type = life_extender<std::tuple<p0443_v2::remove_cvref_t<Values>...>>;
+        life_extender_type extender(
+            (Receiver &&) * this, std::forward<Values>(values)...);
+        auto* data_ptr = extender.data_.get();
         // extender will be moved below so ensure we don't do any
         // unspecified evaluation order
         auto next_sender = extender.call_with_arguments(function_);
-        p0443_v2::submit(std::move(next_sender), std::move(extender));
-    }
-
-    void set_value() {
-        p0443_v2::submit(function_(), (receiver_type &&) * this);
+        using operations_type = p0443_v2::operation_type<decltype(next_sender), life_extender_type>;
+        data_ptr->operation_.template emplace<operations_type>(p0443_v2::connect(std::move(next_sender), std::move(extender)));
+        p0443_v2::start(*std::any_cast<operations_type>(&data_ptr->operation_));
     }
 };
 template <class Sender, class Function>
@@ -74,40 +99,53 @@ struct let_sender
     sender_type sender_;
     function_type function_;
 
-    template<template<class...> class Tuple, template<class...> class Variant>
+    template <template <class...> class Variant>
+    using function_result_types =
+        p0443_v2::function_result_types<Variant, function_type, sender_type>;
+
+    template <template <class...> class Tuple, template <class...> class Variant>
     struct value_types_extractor
     {
-        template<class ST>
-        using extractor = typename p0443_v2::sender_traits<ST>::template value_types<Tuple, Variant>;
+        template <class ST>
+        using extractor =
+            typename p0443_v2::sender_traits<ST>::template value_types<Tuple, Variant>;
 
-        using sender_value_types = boost::mp11::mp_transform<extractor, p0443_v2::function_result_types<Variant, function_type, sender_type>>;
+        using sender_value_types =
+            boost::mp11::mp_transform<extractor, function_result_types<Variant>>;
 
-        template<class T1, class T2>
+        template <class T1, class T2>
         using concat = p0443_v2::concat_value_types<Tuple, Variant, T1, T2>;
 
-        using folded_sender_value_types = boost::mp11::mp_fold<sender_value_types, boost::mp11::mp_first<sender_value_types>, concat>;
+        using folded_sender_value_types =
+            boost::mp11::mp_fold<sender_value_types, boost::mp11::mp_first<sender_value_types>,
+                                 concat>;
     };
 
-    template<template<class...> class Tuple, template<class...> class Variant>
+    template <template <class...> class Tuple, template <class...> class Variant>
     using value_types = typename value_types_extractor<Tuple, Variant>::folded_sender_value_types;
 
-    template<template<class...> class Variant>
-    using error_types = typename p0443_v2::sender_traits<sender_type>::template error_types<Variant>;
+    template <template <class...> class Variant>
+    using error_types =
+        typename p0443_v2::sender_traits<sender_type>::template error_types<Variant>;
 
     static constexpr bool sends_done = p0443_v2::sender_traits<sender_type>::sends_done;
 
-
-    template<class S, class F>
-    let_sender(S &&s, F &&f): sender_(std::forward<S>(s)), function_(std::forward<F>(f)) {}
+    template <class S, class F>
+    let_sender(S &&s, F &&f) : sender_(std::forward<S>(s)), function_(std::forward<F>(f)) {
+    }
 
     template <class Receiver>
     void submit(Receiver &&receiver) {
-        p0443_v2::submit(sender_, let_receiver<Receiver, Function>(std::forward<Receiver>(receiver), std::move(function_)));
+        p0443_v2::submit(sender_,
+                         let_receiver<sender_type, p0443_v2::remove_cvref_t<Receiver>, Function>(
+                             std::forward<Receiver>(receiver), std::move(function_)));
     }
 
-    template<class Receiver>
+    template <class Receiver>
     auto connect(Receiver &&receiver) {
-        return p0443_v2::connect(sender_, let_receiver<Receiver, Function>(std::forward<Receiver>(receiver), std::move(function_)));
+        return p0443_v2::connect(
+            sender_, let_receiver<sender_type, p0443_v2::remove_cvref_t<Receiver>, Function>(
+                         std::forward<Receiver>(receiver), std::move(function_)));
     }
 };
 } // namespace detail
@@ -115,7 +153,8 @@ inline constexpr struct let_fn
 {
     template <class Sender, class Function>
     auto operator()(Sender && sender, Function && fn) const {
-        return detail::let_sender<Sender, Function>{std::forward<Sender>(sender), std::forward<Function>(fn)};
+        return detail::let_sender<Sender, Function>{std::forward<Sender>(sender),
+                                                    std::forward<Function>(fn)};
     }
 } let;
 } // namespace p0443_v2

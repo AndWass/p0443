@@ -34,7 +34,7 @@ namespace detail
 template<class T>
 struct mapped_sender_type
 {
-    using type = std::decay_t<T>;
+    using type = p0443_v2::remove_cvref_t<T>;
 };
 
 template<std::size_t N>
