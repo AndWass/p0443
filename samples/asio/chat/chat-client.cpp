@@ -16,6 +16,7 @@
 #include <p0443_v2/submit_while.hpp>
 #include <p0443_v2/transform.hpp>
 #include <p0443_v2/with.hpp>
+#include <p0443_v2/ignore_values.hpp>
 
 #include "chat_message.hpp"
 
@@ -55,7 +56,7 @@ private:
                     do_send(std::move(front));
                 }
             };
-            auto continuation = p0443_v2::transform(std::move(write_sender), std::move(send_next));
+            auto continuation = p0443_v2::transform(p0443_v2::ignore_values(std::move(write_sender)), std::move(send_next));
 
             p0443_v2::submit(std::move(continuation), p0443_v2::sink_receiver{});
         }

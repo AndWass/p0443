@@ -36,6 +36,10 @@ struct always_done
     }
 };
 
+static auto ignore_values = [](auto&& sender) {
+    return p0443_v2::transform(std::forward<decltype(sender)>(sender), [](auto&&...) {});
+};
+
 struct chat_participant
 {
     net::ip::tcp::socket socket_;
@@ -65,7 +69,7 @@ private:
         // the msg reference will live until the sender returned from writer has been
         // completed. This is ensured by using with below.
         auto writer = [this](chat_message &msg) {
-            return p0443_v2::transform(msg.deliver(this->socket_), [this]() {
+            return p0443_v2::transform(ignore_values(msg.deliver(this->socket_)), [this]() {
                 if (this->deliver_queue_.empty()) {
                     is_writing_ = false;
                 }

@@ -15,7 +15,7 @@ template <class Stream>
 struct write_all
 {
     template <template <class...> class Tuple, template <class...> class Variant>
-    using value_types = Variant<Tuple<>>;
+    using value_types = Variant<Tuple<std::size_t>>;
 
     template <template <class...> class Variant>
     using error_types = Variant<std::exception_ptr>;
@@ -35,7 +35,7 @@ struct write_all
                                  [recv = std::forward<Receiver>(recv)](
                                      const auto &ec, std::size_t bytes_written) mutable {
                                      if (!ec) {
-                                         p0443_v2::set_value(std::move(recv));
+                                         p0443_v2::set_value(std::move(recv), bytes_written);
                                      }
                                      else {
                                          p0443_v2::set_done(std::move(recv));
@@ -55,7 +55,7 @@ struct write_all
                 *stream_, buffer_,
                 [recv = std::move(receiver_)](const auto &ec, std::size_t bytes_written) mutable {
                     if (!ec) {
-                        p0443_v2::set_value(std::move(recv));
+                        p0443_v2::set_value(std::move(recv), bytes_written);
                     }
                     else {
                         p0443_v2::set_done(std::move(recv));

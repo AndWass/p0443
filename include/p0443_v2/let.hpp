@@ -9,7 +9,6 @@
 #include <memory>
 #include <tuple>
 #include <variant>
-#include <any>
 
 #include <p0443_v2/set_value.hpp>
 #include <p0443_v2/submit.hpp>
@@ -37,7 +36,7 @@ struct let_receiver : Receiver
         struct life_extended_data
         {
             ValueTuple data_;
-            std::any operation_;
+            std::shared_ptr<void> operation_;
 
             template<class...Vs>
             life_extended_data(Vs&&...vs): data_(std::forward<Vs>(vs)...) {}
@@ -81,13 +80,22 @@ struct let_receiver : Receiver
         using life_extender_type = life_extender<std::tuple<p0443_v2::remove_cvref_t<Values>...>>;
         life_extender_type extender(
             (Receiver &&) * this, std::forward<Values>(values)...);
+
+        // Get the pointer to the life-extended data
+        // The connected operation will be stored
+        // in a shared pointer in here, and that way will
+        // be managed by the life extender
         auto* data_ptr = extender.data_.get();
+
         // extender will be moved below so ensure we don't do any
         // unspecified evaluation order
         auto next_sender = extender.call_with_arguments(function_);
         using operations_type = p0443_v2::operation_type<decltype(next_sender), life_extender_type>;
-        data_ptr->operation_.template emplace<operations_type>(p0443_v2::connect(std::move(next_sender), std::move(extender)));
-        p0443_v2::start(*std::any_cast<operations_type>(&data_ptr->operation_));
+        auto *op_ptr = new operations_type(p0443_v2::connect(std::move(next_sender), std::move(extender)));
+        data_ptr->operation_.reset(op_ptr, +[](void* p) {
+            delete static_cast<operations_type*>(p);
+        });
+        p0443_v2::start(*op_ptr);
     }
 };
 template <class Sender, class Function>

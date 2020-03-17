@@ -29,6 +29,10 @@
 
 namespace net = boost::asio::ip;
 
+auto ignore_values = [](auto&& sender) {
+    return p0443_v2::transform(std::forward<decltype(sender)>(sender), [](auto&&...) {});
+};
+
 int main(int argc, char **argv) {
     std::cout << "TCP Echo sample\n";
 
@@ -65,8 +69,8 @@ int main(int argc, char **argv) {
             // function. The function returns a sender which is then submitted with with the
             // original receiver
             auto write_all = [&socket, &buffer](std::size_t amount_read) mutable {
-                return p0443_v2::asio::write_all(socket,
-                                                 boost::asio::buffer(buffer.data(), amount_read));
+                return ignore_values(p0443_v2::asio::write_all(socket,
+                                                 boost::asio::buffer(buffer.data(), amount_read)));
             };
             // socket |> read_some(buffer) |> then(write_all)
             auto read_write_sender = p0443_v2::then(

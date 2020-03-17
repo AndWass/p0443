@@ -63,7 +63,7 @@ private:
 
         struct write_all_receiver : receiver_base
         {
-            void set_value() {
+            void set_value(std::size_t) {
                 this->owner_->start_read();
             }
         };
