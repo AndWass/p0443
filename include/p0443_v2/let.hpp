@@ -9,6 +9,7 @@
 #include <memory>
 #include <tuple>
 #include <variant>
+#include <optional>
 
 #include <p0443_v2/set_value.hpp>
 #include <p0443_v2/submit.hpp>
@@ -29,42 +30,54 @@ struct let_receiver : Receiver
     using receiver_type = std::decay_t<Receiver>;
     using function_type = remove_cvref_t<Function>;
 
-    template <class ValueTuple>
-    struct life_extender : Receiver
+    template<class ValueTuple>
+    struct life_extender_receiver
     {
-        using base_ = p0443_v2::remove_cvref_t<Receiver>;
+        Receiver next_;
         struct life_extended_data
         {
             ValueTuple data_;
-            std::shared_ptr<void> operation_;
+            // Holds a type erased pointer to
+            std::unique_ptr<void, void(*)(void*)> operation_{nullptr, +[](void*) {}};
 
             template<class...Vs>
             life_extended_data(Vs&&...vs): data_(std::forward<Vs>(vs)...) {}
         };
-        std::shared_ptr<life_extended_data> data_;
+
+        life_extended_data* data_ = nullptr;
 
         template <class R, class... Vs>
-        explicit life_extender(R &&r, Vs &&... values)
-            : base_(std::forward<R>(r)),
-              data_(std::make_shared<life_extended_data>(std::forward<Vs>(values)...)) {
+        explicit life_extender_receiver(R &&r, Vs &&... values)
+            : next_(std::forward<R>(r)),
+              data_(new life_extended_data(std::forward<Vs>(values)...)) {
         }
 
         template <class Fn>
         auto call_with_arguments(Fn &&fn) {
             return std::apply(std::forward<Fn>(fn), data_->data_);
         }
-    };
 
-    template <>
-    struct life_extender<std::tuple<>> : Receiver
-    {
-        template <class R>
-        explicit life_extender(R &&r) : Receiver(std::forward<R>(r)) {
+        template<class...Values>
+        void set_value(Values&&...values) {
+            if(data_) {
+                delete data_;
+            }
+            p0443_v2::set_value(std::move(next_), std::forward<Values>(values)...);
         }
 
-        template <class Fn>
-        auto call_with_arguments(Fn &&fn) {
-            return fn();
+        template<class E>
+        void set_error(E&& e) {
+            if(data_) {
+                delete data_;
+            }
+            p0443_v2::set_error(std::move(next_), std::forward<E>(e));
+        }
+
+        void set_done() {
+            if(data_) {
+                delete data_;
+            }
+            p0443_v2::set_done(std::move(next_));
         }
     };
 
@@ -77,23 +90,14 @@ struct let_receiver : Receiver
 
     template <class... Values>
     void set_value(Values &&... values) {
-        using life_extender_type = life_extender<std::tuple<p0443_v2::remove_cvref_t<Values>...>>;
-        life_extender_type extender(
-            (Receiver &&) * this, std::forward<Values>(values)...);
-
-        // Get the pointer to the life-extended data
-        // The connected operation will be stored
-        // in a shared pointer in here, and that way will
-        // be managed by the life extender
-        auto* data_ptr = extender.data_.get();
-
-        // extender will be moved below so ensure we don't do any
-        // unspecified evaluation order
+        using life_extender_type = life_extender_receiver<std::tuple<p0443_v2::remove_cvref_t<Values>...>>;
+        life_extender_type extender{(Receiver&&)*this, std::forward<Values>(values)...};
+        auto *data_ptr = extender.data_;
         auto next_sender = extender.call_with_arguments(function_);
         using operations_type = p0443_v2::operation_type<decltype(next_sender), life_extender_type>;
         auto *op_ptr = new operations_type(p0443_v2::connect(std::move(next_sender), std::move(extender)));
-        data_ptr->operation_.reset(op_ptr, +[](void* p) {
-            delete static_cast<operations_type*>(p);
+        data_ptr->operation_ = decltype(data_ptr->operation_)(op_ptr, +[](void* p) {
+            delete (static_cast<operations_type*>(p));
         });
         p0443_v2::start(*op_ptr);
     }
