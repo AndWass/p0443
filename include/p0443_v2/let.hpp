@@ -59,25 +59,25 @@ struct let_receiver : Receiver
 
         template<class...Values>
         void set_value(Values&&...values) {
+            p0443_v2::set_value(std::move(next_), std::forward<Values>(values)...);
             if(data_) {
                 delete data_;
             }
-            p0443_v2::set_value(std::move(next_), std::forward<Values>(values)...);
         }
 
         template<class E>
         void set_error(E&& e) {
+            p0443_v2::set_error(std::move(next_), std::forward<E>(e));
             if(data_) {
                 delete data_;
             }
-            p0443_v2::set_error(std::move(next_), std::forward<E>(e));
         }
 
         void set_done() {
+            p0443_v2::set_done(std::move(next_));
             if(data_) {
                 delete data_;
             }
-            p0443_v2::set_done(std::move(next_));
         }
     };
 
