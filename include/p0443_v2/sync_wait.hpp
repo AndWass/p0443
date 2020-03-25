@@ -7,7 +7,8 @@
 #pragma once
 
 #include <p0443_v2/sender_traits.hpp>
-#include <p0443_v2/submit.hpp>
+#include <p0443_v2/connect.hpp>
+#include <p0443_v2/start.hpp>
 
 #include <atomic>
 #include <exception>
@@ -129,7 +130,8 @@ struct valued_sync_wait_impl
         using decayed = std::decay_t<Sender>;
         using value_types = typename p0443_v2::sender_traits<decayed>::template value_types<std::tuple, std::variant>;
         shared_state<value_types> state;
-        p0443_v2::submit(std::forward<Sender>(sender), state.ref());
+        auto op = p0443_v2::connect(std::forward<Sender>(sender), state.ref());
+        p0443_v2::start(op);
         return state.get();
     }
 };
@@ -141,7 +143,8 @@ struct valued_sync_wait_impl<std::variant<std::tuple<T>>>
     static auto run(Sender &&sender)
     {
         shared_state<T> state;
-        p0443_v2::submit(std::forward<Sender>(sender), state.ref());
+        auto op = p0443_v2::connect(std::forward<Sender>(sender), state.ref());
+        p0443_v2::start(op);
         return state.get();
     }
 };
@@ -153,7 +156,8 @@ struct valued_sync_wait_impl<std::variant<std::tuple<>>>
     static auto run(Sender &&sender)
     {
         shared_state<void> state;
-        p0443_v2::submit(std::forward<Sender>(sender), state.ref());
+        auto op = p0443_v2::connect(std::forward<Sender>(sender), state.ref());
+        p0443_v2::start(op);
         state.get();
     }
 };
