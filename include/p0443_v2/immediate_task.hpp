@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <experimental/coroutine>
 #include <p0443_v2/await_sender.hpp>
 
 namespace p0443_v2
@@ -23,22 +24,7 @@ struct immediate_task
             return {};
         }
 
-        struct final_suspender
-        {
-            bool await_ready() {
-                return false;
-            }
-
-            void await_resume() {}
-
-            void await_suspend(p0443_v2::stdcoro::coroutine_handle<promise_type> other) {
-                other.destroy();
-            }
-        };
-
-
-
-        final_suspender final_suspend() noexcept {
+        p0443_v2::stdcoro::suspend_never final_suspend() noexcept {
             return {};
         }
 
