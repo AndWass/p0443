@@ -87,12 +87,6 @@ struct submit_while_sender
         : sender_(std::forward<S>(sender)), predicate_(std::forward<P>(predicate)) {
     }
 
-    template <class Receiver>
-    void submit(Receiver &&receiver) {
-        p0443_v2::submit(
-            sender_(), receiver_t<Receiver>(sender_, predicate_, std::forward<Receiver>(receiver)));
-    }
-
     template<class Receiver>
     auto connect(Receiver &&receiver) {
         return p0443_v2::connect(sender_(), receiver_t<Receiver>(sender_, predicate_, std::forward<Receiver>(receiver)));

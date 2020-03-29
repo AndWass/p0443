@@ -9,6 +9,9 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/write.hpp>
 
+#include <p0443_v2/set_value.hpp>
+#include <p0443_v2/set_done.hpp>
+
 namespace p0443_v2::asio
 {
 template <class Stream>
@@ -27,20 +30,6 @@ struct write_all
 
     template <class Buffer>
     write_all(Stream &stream, Buffer &&buffer) : stream_(&stream), buffer_(buffer) {
-    }
-
-    template <class Receiver>
-    void submit(Receiver &&recv) {
-        boost::asio::async_write(*stream_, buffer_,
-                                 [recv = std::forward<Receiver>(recv)](
-                                     const auto &ec, std::size_t bytes_written) mutable {
-                                     if (!ec) {
-                                         p0443_v2::set_value(std::move(recv), bytes_written);
-                                     }
-                                     else {
-                                         p0443_v2::set_done(std::move(recv));
-                                     }
-                                 });
     }
 
     template <class Receiver>

@@ -8,6 +8,9 @@
 
 #include <boost/asio/buffer.hpp>
 
+#include <p0443_v2/set_value.hpp>
+#include <p0443_v2/set_done.hpp>
+
 namespace p0443_v2::asio
 {
 template<class Stream>
@@ -26,18 +29,6 @@ struct read_some
 
     template<class Buffer>
     read_some(Stream& stream, Buffer&& buffer): stream_(&stream), buffer_(buffer) {}
-
-    template<class Receiver>
-    void submit(Receiver &&recv) {
-        stream_->async_read_some(buffer_, [recv = std::forward<Receiver>(recv)](const auto &ec, std::size_t bytes_read) mutable {
-            if(!ec) {
-                p0443_v2::set_value(std::move(recv), bytes_read);
-            }
-            else {
-                p0443_v2::set_done(std::move(recv));
-            }
-        });
-    }
 
     template<class Receiver>
     struct operation_state

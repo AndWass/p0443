@@ -29,25 +29,6 @@ struct resolve
 
     static constexpr bool sends_done =  true;
 
-    template <class Receiver>
-    void submit(Receiver &&recv) {
-            if (!resolv_ || host_.empty() || service_.empty()) {
-                p0443_v2::set_done(recv);
-            }
-            else {
-                resolv_->async_resolve(host_, service_,
-                                    [receiver = p0443_v2::decay_copy(std::forward<Receiver>(recv))](
-                                        const auto &ec, auto results) mutable {
-                                        if (!ec) {
-                                            p0443_v2::set_value(receiver, results);
-                                        }
-                                        else {
-                                            p0443_v2::set_done(receiver);
-                                        }
-                                    });
-            }
-    }
-
     template<class Receiver>
     struct operation_state
     {

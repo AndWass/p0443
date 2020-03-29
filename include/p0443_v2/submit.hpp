@@ -9,110 +9,73 @@
 #include "tag_invoke.hpp"
 #include "type_traits.hpp"
 
-#include <exception>
-#include <optional>
-#include <utility>
+#include <memory>
 
-#include "set_done.hpp"
-#include "set_error.hpp"
-#include "set_value.hpp"
+#include <p0443_v2/connect.hpp>
+#include <p0443_v2/start.hpp>
+#include <p0443_v2/set_value.hpp>
+#include <p0443_v2/set_done.hpp>
+#include <p0443_v2/set_error.hpp>
 
 namespace p0443_v2
 {
 namespace detail
 {
-template <class Sender, class Receiver>
-using has_submit_member_detector =
-    decltype(std::declval<Sender>().submit(std::declval<Receiver>()));
-
-void submit();
-template <class Sender, class Receiver>
-using has_submit_free_detector = decltype(submit(std::declval<Sender>(), std::declval<Receiver>()));
-
-template <class Receiver>
-struct as_invocable
-{
-private:
-    using receiver_type = p0443_v2::remove_cvref_t<Receiver>;
-    std::optional<receiver_type> r_{};
-
-    template <typename R>
-    void try_init_(R r) {
-        try {
-            r_.emplace((decltype(r) &&)r);
-        }
-        catch (...) {
-            p0443_v2::set_error(r, std::current_exception());
-        }
-    }
-
-public:
-    explicit as_invocable(receiver_type &&r) {
-        try_init_(std::move_if_noexcept(r));
-    }
-    explicit as_invocable(const receiver_type &r) {
-        try_init_(r);
-    }
-    as_invocable(as_invocable &&other) {
-        if (other.r_) {
-            try_init_(std::move_if_noexcept(*other.r_));
-            other.r_.reset();
-        }
-    }
-    ~as_invocable() {
-        if (r_)
-            ::p0443_v2::set_done(*r_);
-    }
-    void operator()() {
-        try {
-            ::p0443_v2::set_value(*r_);
-        }
-        catch (...) {
-            ::p0443_v2::set_error(*r_, std::current_exception());
-        }
-        r_.reset();
-    }
-};
-
+inline void do_nothing_deleter(void*) {}
 struct submit_impl
 {
-    template <class Sender, class Receiver>
-    using use_member = std::conjunction<
-        p0443_v2::is_receiver<Receiver>,
-        p0443_v2::is_detected<detail::has_submit_member_detector, Sender, Receiver>
-    >;
+    template<class Receiver>
+    struct submit_receiver
+    {
+        struct operation_state_holder
+        {
+            // Holds a type erased pointer to the entire operation state.
+            std::unique_ptr<void, void(*)(void*)> operation_{nullptr, +[](void*) {}};
+        };
 
-    template <class Sender, class Receiver>
-    using use_free_function = std::conjunction<
-        p0443_v2::is_receiver<Receiver>,
-        std::negation<p0443_v2::is_detected<detail::has_submit_member_detector, Sender, Receiver>>,
-        p0443_v2::is_detected<detail::has_submit_free_detector, Sender, Receiver>>;
+        Receiver next_;
+        operation_state_holder* data_ = nullptr;
 
-    template <class Sender, class Receiver>
-    using use_execute = std::conjunction<
-        p0443_v2::is_receiver_of<Receiver>,
-        std::negation<use_member<Sender, Receiver>>,
-                                         std::negation<use_free_function<Sender, Receiver>>,
-                                         ::p0443_v2::is_executor<Sender>
-                                         >;
+        template <class R, class... Vs>
+        explicit submit_receiver(R &&r)
+            : next_(std::forward<R>(r)),
+              data_(new operation_state_holder) {
+        }
 
-    template <class Sender, class Receiver>
-    std::enable_if_t<use_member<Sender, Receiver>::value> operator()(Sender && sender,
-                                                                     Receiver && receiver) const {
-        sender.submit(std::forward<Receiver>(receiver));
-    }
+        template<class...Values>
+        void set_value(Values&&...values) {
+            p0443_v2::set_value(std::move(next_), std::forward<Values>(values)...);
+            if(data_) {
+                delete data_;
+            }
+        }
 
-    template <class Sender, class Receiver>
-    std::enable_if_t<use_free_function<Sender, Receiver>::value>
-    operator()(Sender && sender, Receiver && receiver) const {
-        submit(std::forward<Sender>(sender), std::forward<Receiver>(receiver));
-    }
+        template<class E>
+        void set_error(E&& e) {
+            p0443_v2::set_error(std::move(next_), std::forward<E>(e));
+            if(data_) {
+                delete data_;
+            }
+        }
 
+        void set_done() {
+            p0443_v2::set_done(std::move(next_));
+            if(data_) {
+                delete data_;
+            }
+        }
+    };
     template <class Sender, class Receiver>
-    std::enable_if_t<use_execute<Sender, Receiver>::value> operator()(Sender && sender,
-                                                                      Receiver && receiver) const {
-        ::p0443_v2::tag_invoke(std::forward<Sender>(sender), ::p0443_v2::tag::execute,
-                               as_invocable<Receiver>(std::forward<Receiver>(receiver)));
+    void operator()(Sender&& sender, Receiver&& receiver) const {
+        using wrapped_receiver_t = submit_receiver<p0443_v2::remove_cvref_t<Receiver>>;
+        using submit_op_t = p0443_v2::operation_type<Sender, wrapped_receiver_t&&>;
+        wrapped_receiver_t wrapped_receiver(std::forward<Receiver>(receiver));
+        auto *data_storage = wrapped_receiver.data_;
+        auto *next_op = new submit_op_t(p0443_v2::connect(std::forward<Sender>(sender), std::move(wrapped_receiver)));
+        data_storage->operation_ = decltype(data_storage->operation_)(next_op, +[](void* p) {
+            delete (static_cast<submit_op_t*>(p));
+        });
+        p0443_v2::start(*next_op);
     }
 };
 } // namespace detail
@@ -121,9 +84,7 @@ constexpr detail::submit_impl submit;
 namespace tag
 {
 template <class Sender, class Receiver>
-std::enable_if_t<std::disjunction_v<detail::submit_impl::use_member<Sender, Receiver>,
-                                    detail::submit_impl::use_free_function<Sender, Receiver>,
-                                    detail::submit_impl::use_execute<Sender, Receiver>>>
+void
 tag_invoke(Sender &&sender, p0443_v2::tag::submit_t, Receiver &&receiver) {
     ::p0443_v2::submit(std::forward<Sender>(sender), std::forward<Receiver>(receiver));
 }

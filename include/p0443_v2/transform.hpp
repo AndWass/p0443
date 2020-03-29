@@ -7,10 +7,12 @@
 #pragma once
 
 #include <p0443_v2/sender_traits.hpp>
-#include <p0443_v2/submit.hpp>
 #include <p0443_v2/type_traits.hpp>
 #include <p0443_v2/connect.hpp>
 #include <p0443_v2/start.hpp>
+#include <p0443_v2/set_value.hpp>
+#include <p0443_v2/set_error.hpp>
+#include <p0443_v2/set_done.hpp>
 
 #include <exception>
 #include <utility>
@@ -102,11 +104,6 @@ struct transform_sender
     using error_types = p0443_v2::append_error_types<Variant, sender_type, std::exception_ptr>;
 
     static constexpr bool sends_done =  p0443_v2::sender_traits<sender_type>::sends_done;
-
-    template <class Receiver>
-    void submit(Receiver &&rx) {
-        p0443_v2::submit(sender_, receiver<Receiver>(std::forward<Receiver>(rx), function_));
-    }
 
     template<class Receiver>
     auto connect(Receiver &&recv) {

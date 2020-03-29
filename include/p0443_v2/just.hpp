@@ -8,7 +8,6 @@
 
 #include <tuple>
 
-#include <p0443_v2/make_sender.hpp>
 #include <p0443_v2/set_error.hpp>
 #include <p0443_v2/set_value.hpp>
 
@@ -32,19 +31,6 @@ struct just_sender
 
     template <class... Vs, std::enable_if_t<std::is_constructible_v<storage_type, Vs...>> * = nullptr>
     just_sender(Vs &&... v) : val_(std::forward<Vs>(v)...) {
-    }
-
-    template <class Receiver>
-    void submit(Receiver &&recv) {
-        try {
-            auto caller = [&recv](auto &&... values) {
-                p0443_v2::set_value(std::move(recv), std::move(values)...);
-            };
-            std::apply(caller, std::move(val_));
-        }
-        catch (...) {
-            p0443_v2::set_error(recv, std::current_exception());
-        }
     }
 
     template <class Receiver>
@@ -82,16 +68,6 @@ struct just_sender<>
     using error_types = Variant<std::exception_ptr>;
 
     static constexpr bool sends_done = false;
-
-    template <class Receiver>
-    void submit(Receiver &&recv) {
-        try {
-            p0443_v2::set_value(recv);
-        }
-        catch (...) {
-            p0443_v2::set_error(recv, std::current_exception());
-        }
-    }
 
     template <class Receiver>
     struct just_operation

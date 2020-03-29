@@ -119,7 +119,7 @@ struct chat_room
                                    });
 
         return p0443_v2::handle_done(std::move(message_reader), std::move(participant_remover));
-    }
+    }ö
 
 private:
     std::vector<chat_participant *> participants_;

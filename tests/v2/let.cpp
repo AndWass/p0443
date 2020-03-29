@@ -1,7 +1,6 @@
 #include <p0443_v2/just.hpp>
 #include <p0443_v2/let.hpp>
 #include <p0443_v2/make_receiver.hpp>
-#include <p0443_v2/make_sender.hpp>
 #include <p0443_v2/transform.hpp>
 #include <p0443_v2/sink_receiver.hpp>
 
@@ -30,11 +29,6 @@ TEST_CASE("let: multiple values have extended lifetime") {
                                         return p0443_v2::transform(p0443_v2::just(10), [](auto v) {
                                             return v*2.0;
                                         });
-                                        /*return p0443_v2::make_sender([&](auto &&recv) {
-                                            ptr3 = &std::get<0>(*recv.data_);
-                                            ptr4 = &std::get<1>(*recv.data_);
-                                            p0443_v2::set_value(recv, recv.data_);
-                                        });*/
                                     });
     auto just_sender = p0443_v2::just(10);
     auto fn =  [](int) {

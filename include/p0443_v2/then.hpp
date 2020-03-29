@@ -98,13 +98,6 @@ struct then_sender : Sender
     };
 
     template <class Receiver>
-    void submit(Receiver &&recv) {
-        using receiver_t = std::decay_t<Receiver>;
-        p0443_v2::submit((Sender &&) * this, then_receiver<receiver_t, Function>{
-                                                 (Receiver &&) recv, std::move(function_)});
-    }
-
-    template <class Receiver>
     auto connect(Receiver &&receiver) {
         return p0443_v2::connect((Sender&&)*this, connected_receiver<p0443_v2::remove_cvref_t<Receiver>>{
             std::forward<Receiver>(receiver), std::move(function_)});

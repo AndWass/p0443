@@ -1,5 +1,6 @@
 #pragma once
 
+#include "p0443_v2/type_traits.hpp"
 #include <memory>
 
 #include <tuple>
@@ -7,7 +8,6 @@
 
 struct test_receiver
 {
-    bool submitted = false;
     bool *shared_submitted = nullptr;
     void set_done() {}
 
@@ -15,7 +15,6 @@ struct test_receiver
     void set_error(T) {}
 
     void set_value() {
-        submitted = true;
         if(shared_submitted) {
             *shared_submitted = true;
         }
@@ -85,17 +84,31 @@ struct conditional_sender
     explicit conditional_sender(bool b): should_set_value(b) {}
 
     template<class Receiver>
-    void submit(Receiver &&recv) {
-        if(should_set_value) {
-            p0443_v2::set_value(recv);
+    struct operation
+    {
+        bool should_set_value_;
+        Receiver next_;
+        void start() {
+            if(should_set_value_) {
+                p0443_v2::set_value(std::move(next_));
+            }
         }
+    };
+
+    template<class Receiver>
+    auto connect(Receiver &&recv) {
+        return operation<p0443_v2::remove_cvref_t<Receiver>>{
+            should_set_value,
+            std::forward<Receiver>(recv)
+        };
     }
 };
 
 template<class...Values>
 struct value_sender
 {
-    std::tuple<std::decay_t<Values>...> val_;
+    using storage_type = std::tuple<p0443_v2::remove_cvref_t<Values>...>;
+    storage_type val_;
 
     template<template<class...> class Tuple, template<class...> class Variant>
     using value_types = Variant<Tuple<std::decay_t<Values>...>>;
@@ -109,22 +122,22 @@ struct value_sender
     value_sender(Vs&&... v): val_(std::forward<Vs>(v)...) {}
 
     template<class Receiver>
-    void submit(Receiver &&recv) {
-        auto all_values = std::tuple_cat(std::forward_as_tuple(std::forward<Receiver>(recv)), val_);
-        std::apply(p0443_v2::set_value, std::move(all_values));
-    }
-};
-
-template<class Value>
-struct value_sender<Value>
-{
-    static constexpr bool sends_done = false;
-    
-    Value val_;
-    value_sender(Value v): val_(v) {}
+    struct operation
+    {
+        storage_type val_;
+        Receiver receiver_;
+        void start() {
+            std::apply([&, this](auto&&...values) {
+                p0443_v2::set_value(std::move(receiver_), std::forward<decltype(values)>(values)...);
+            }, std::move(val_));
+        }
+    };
 
     template<class Receiver>
-    void submit(Receiver &&recv) {
-        p0443_v2::set_value(recv, val_);
+    auto connect(Receiver &&rx) {
+        return operation<p0443_v2::remove_cvref_t<Receiver>> {
+            std::move(val_),
+            std::forward<Receiver>(rx)
+        };
     }
 };

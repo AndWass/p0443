@@ -17,7 +17,6 @@
 #include <p0443_v2/sink_receiver.hpp>
 #include <p0443_v2/submit_while.hpp>
 
-#include <p0443_v2/handle_done.hpp>
 #include <p0443_v2/immediate_task.hpp>
 #include <p0443_v2/then.hpp>
 #include <p0443_v2/transform.hpp>

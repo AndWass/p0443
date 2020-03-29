@@ -48,16 +48,6 @@ struct connect_socket
     connect_socket(boost::asio::basic_socket<Protocol, Executor> &socket, endpoint_type &begin):
         socket_(&socket), endpoints_(endpoint_range{&begin, (&begin)+1}) {}
 
-    template <class Receiver>
-    void submit(Receiver &&receiver) {
-        if(endpoints_.index() == 0) {
-            submit_endpoint_range(std::forward<Receiver>(receiver));
-        }
-        else {
-            submit_resolver_results(std::forward<Receiver>(receiver));
-        }
-    }
-
     template<class Receiver>
     struct operation_state
     {

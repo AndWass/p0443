@@ -37,7 +37,7 @@ struct let_receiver : Receiver
         struct life_extended_data
         {
             ValueTuple data_;
-            // Holds a type erased pointer to
+            // Holds a type erased pointer to the entire operation state.
             std::unique_ptr<void, void(*)(void*)> operation_{nullptr, +[](void*) {}};
 
             template<class...Vs>
@@ -144,13 +144,6 @@ struct let_sender
 
     template <class S, class F>
     let_sender(S &&s, F &&f) : sender_(std::forward<S>(s)), function_(std::forward<F>(f)) {
-    }
-
-    template <class Receiver>
-    void submit(Receiver &&receiver) {
-        p0443_v2::submit(sender_,
-                         let_receiver<sender_type, p0443_v2::remove_cvref_t<Receiver>, Function>(
-                             std::forward<Receiver>(receiver), std::move(function_)));
     }
 
     template <class Receiver>

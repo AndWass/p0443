@@ -1,15 +1,14 @@
 
 set(sources
     main.cpp
-    execution.cpp
-    task.cpp
-    v2/tag_invoke.cpp
+    #execution.cpp
+    #task.cpp
+    #v2/tag_invoke.cpp
     v2/submit.cpp
     v2/transform.cpp
     v2/sync_wait.cpp
     v2/let.cpp
-    v2/asio_executor.cpp
-    v2/handle_error.cpp
+    #v2/handle_error.cpp
     v2/asio_connect.cpp
     v2/just.cpp
     v2/sender_traits.cpp
