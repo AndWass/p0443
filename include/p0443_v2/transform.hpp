@@ -48,12 +48,12 @@ struct transform_sender
                     p0443_v2::set_value((receiver_type &&) next_);
                 }
                 catch (...) {
-                    p0443_v2::set_error(next_, std::current_exception());
+                    p0443_v2::set_error((Receiver&&)next_, std::current_exception());
                 }
             }
             else {
                 try {
-                    p0443_v2::set_value((receiver_type &&) next_,
+                    p0443_v2::set_value((Receiver&&) next_,
                                         fn_(std::forward<Values>(values)...));
                 }
                 catch (...) {
@@ -63,12 +63,12 @@ struct transform_sender
         }
 
         void set_done() {
-            p0443_v2::set_done(next_);
+            p0443_v2::set_done((Receiver&&)next_);
         }
 
         template <class E>
         void set_error(E &&e) {
-            p0443_v2::set_error(next_, e);
+            p0443_v2::set_error((Receiver&&)next_, (E&&)e);
         }
     };
 

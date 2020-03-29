@@ -24,58 +24,36 @@ namespace detail
 inline void do_nothing_deleter(void*) {}
 struct submit_impl
 {
-    template<class Receiver>
+    template<class Sender, class Receiver>
     struct submit_receiver
     {
-        struct operation_state_holder
+        struct wrap
         {
-            // Holds a type erased pointer to the entire operation state.
-            std::unique_ptr<void, void(*)(void*)> operation_{nullptr, +[](void*) {}};
+            submit_receiver<Sender, Receiver> *owner_;
+            template<class...Values>
+            void set_value(Values&&...values) && {
+                p0443_v2::set_value(std::move(owner_->next_), (Values&&)values...);
+                delete owner_;
+            }
+
+            template<class E>
+            void set_error(E&& e) && {
+                p0443_v2::set_error(std::move(owner_->next_), (E&&)e);
+                delete owner_;
+            }
+
+            void set_done() && noexcept {
+                p0443_v2::set_done(std::move(owner_->next_));
+            }
         };
 
-        Receiver next_;
-        operation_state_holder* data_ = nullptr;
-
-        template <class R, class... Vs>
-        explicit submit_receiver(R &&r)
-            : next_(std::forward<R>(r)),
-              data_(new operation_state_holder) {
-        }
-
-        template<class...Values>
-        void set_value(Values&&...values) {
-            p0443_v2::set_value(std::move(next_), std::forward<Values>(values)...);
-            if(data_) {
-                delete data_;
-            }
-        }
-
-        template<class E>
-        void set_error(E&& e) {
-            p0443_v2::set_error(std::move(next_), std::forward<E>(e));
-            if(data_) {
-                delete data_;
-            }
-        }
-
-        void set_done() {
-            p0443_v2::set_done(std::move(next_));
-            if(data_) {
-                delete data_;
-            }
-        }
+        p0443_v2::remove_cvref_t<Receiver> next_;
+        p0443_v2::operation_type<Sender, wrap> state_;
+        submit_receiver(Sender&& s, Receiver&& r): next_((Receiver&&)r), state_(p0443_v2::connect((Sender&&)s, wrap{this})) {}
     };
     template <class Sender, class Receiver>
     void operator()(Sender&& sender, Receiver&& receiver) const {
-        using wrapped_receiver_t = submit_receiver<p0443_v2::remove_cvref_t<Receiver>>;
-        using submit_op_t = p0443_v2::operation_type<Sender, wrapped_receiver_t&&>;
-        wrapped_receiver_t wrapped_receiver(std::forward<Receiver>(receiver));
-        auto *data_storage = wrapped_receiver.data_;
-        auto *next_op = new submit_op_t(p0443_v2::connect(std::forward<Sender>(sender), std::move(wrapped_receiver)));
-        data_storage->operation_ = decltype(data_storage->operation_)(next_op, +[](void* p) {
-            delete (static_cast<submit_op_t*>(p));
-        });
-        p0443_v2::start(*next_op);
+        p0443_v2::start((new submit_receiver<Sender, Receiver>((Sender&&)sender, (Receiver&&)receiver))->state_);
     }
 };
 } // namespace detail

@@ -81,7 +81,7 @@ struct sequence_sender<S1, S2>
                     p0443_v2::start(ref);
                 }
                 catch (...) {
-                    p0443_v2::set_error(state->receiver_, std::current_exception());
+                    p0443_v2::set_error(std::move(state->receiver_), std::current_exception());
                 }
             }
 

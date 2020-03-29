@@ -10,6 +10,7 @@ set(sources
     v2/let.cpp
     #v2/handle_error.cpp
     v2/asio_connect.cpp
+    v2/asio_timer.cpp
     v2/just.cpp
     v2/sender_traits.cpp
     v2/sequence.cpp

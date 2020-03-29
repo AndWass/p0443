@@ -58,19 +58,19 @@ struct submit_while_sender
                 bool predicate_result = predicate_(values...);
 
                 if (predicate_result) {
-                    p0443_v2::submit(sender_(), receiver_t<Receiver>(*this));
+                    p0443_v2::submit(sender_(), receiver_t<Receiver>(std::move(*this)));
                 }
                 else {
-                    p0443_v2::set_value(target_, std::forward<Values>(values)...);
+                    p0443_v2::set_value((Receiver&&)target_, std::forward<Values>(values)...);
                 }
             }
             catch (...) {
-                p0443_v2::set_error(target_, std::current_exception());
+                p0443_v2::set_error((Receiver&&)target_, std::current_exception());
             }
         }
 
         void set_done() {
-            p0443_v2::set_done(target_);
+            p0443_v2::set_done((Receiver&&)target_);
         }
 
         template <class Error>

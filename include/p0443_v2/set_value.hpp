@@ -35,7 +35,7 @@ struct set_value_impl
     template <class Receiver, class... Values>
     std::enable_if_t<use_member<Receiver, Values...>::value> operator()(Receiver && rx, Values &&
                                                                         ... values) const noexcept {
-        rx.set_value(std::forward<Values>(values)...);
+        std::forward<Receiver>(rx).set_value(std::forward<Values>(values)...);
     }
 
     template <class Receiver, class... Values>

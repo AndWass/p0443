@@ -34,7 +34,7 @@ struct set_done_impl
 
     template<class Receiver>
     std::enable_if_t<use_member<Receiver>::value> operator()(Receiver &&rx) const noexcept {
-        rx.set_done();
+        std::forward<Receiver>(rx).set_done();
     }
 
     template<class Receiver>

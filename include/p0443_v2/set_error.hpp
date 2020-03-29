@@ -34,7 +34,7 @@ struct set_error_impl
     template <class Receiver, class Error>
     std::enable_if_t<use_member<Receiver, Error>::value> operator()(Receiver && rx,
                                                                     Error && err) const noexcept {
-        rx.set_error(std::forward<Error>(err));
+        std::forward<Receiver>(rx).set_error(std::forward<Error>(err));
     }
 
     template <class Receiver, class Error>
