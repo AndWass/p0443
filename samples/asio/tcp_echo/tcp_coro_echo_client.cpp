@@ -27,10 +27,9 @@ namespace net = boost::asio::ip;
 
 p0443_v2::immediate_task client_task(boost::asio::io_context &io, std::string_view host,
                                      std::string_view port, std::string to_send) {
-    net::tcp::resolver resolver(io);
     try
     {
-        auto eps = co_await p0443_v2::await_sender(p0443_v2::asio::resolve(resolver, host, port));
+        auto eps = co_await p0443_v2::await_sender(p0443_v2::asio::resolve(io, host, port));
         net::tcp::socket socket(io);
         auto actual_ep = co_await p0443_v2::await_sender(p0443_v2::asio::connect_socket(socket, eps));
         std::cout << "Connected to " << actual_ep.address().to_string() << ":" << actual_ep.port() << "\n";

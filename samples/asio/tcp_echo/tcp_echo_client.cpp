@@ -38,16 +38,15 @@ int main(int argc, char **argv) {
     boost::asio::io_context io;
     struct read_state
     {
-        net::tcp::resolver resolver;
         net::tcp::socket socket;
         std::string read_buffer;
 
-        read_state(boost::asio::io_context &io) : resolver(io), socket(io) {
+        read_state(boost::asio::io_context &io) : socket(io) {
         }
     };
 
-    auto resolve_connect = [](auto &resolver, auto &socket, auto host, auto service) {
-        return p0443_v2::then(p0443_v2::asio::resolve(resolver, host, service), [&](auto &eps) {
+    auto resolve_connect = [&io](auto &socket, auto host, auto service) {
+        return p0443_v2::then(p0443_v2::asio::resolve(io, host, service), [&](auto &eps) {
             return p0443_v2::asio::connect_socket(socket, eps);
         });
     };
@@ -66,7 +65,7 @@ int main(int argc, char **argv) {
     // with(fn, value1, value2) = let(just(value1, value2), fn)
     auto connector = p0443_v2::with([&](read_state& state) {
         state.read_buffer.resize(string_to_send.size());
-        return p0443_v2::sequence(resolve_connect(state.resolver, state.socket, argv[1], argv[2]), write_read(state));
+        return p0443_v2::sequence(resolve_connect(state.socket, argv[1], argv[2]), write_read(state));
     }, read_state(io));
 
     p0443_v2::submit(std::move(connector), p0443_v2::done_channel([] {

@@ -33,10 +33,9 @@ TEST_CASE("connect to local endpoint") {
 TEST_CASE("connect to local endpoint") {
     using tcp = boost::asio::ip::tcp;
     boost::asio::io_context io;
-    tcp::resolver resolver(io);
     tcp::socket socket(io);
     auto resolve_connect =
-        p0443_v2::let(p0443_v2::asio::resolve(resolver, "www.google.se", "https"),
+        p0443_v2::let(p0443_v2::asio::resolve(io, "www.google.se", "https"),
                       [&](tcp::resolver::results_type &results) {
                           // Results will continue to live for the duration of
                           // the connect sender
