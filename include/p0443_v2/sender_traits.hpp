@@ -123,6 +123,9 @@ template <template <class...> class Variant, class Sender, class... ErrorTypes>
 using append_error_types =
     typename detail::append_error_types_base<Variant, Sender, ErrorTypes...>::type;
 
+template <template <class...> class Variant, class Sender, class Sender2>
+using merge_error_types = append_error_types<Variant, Sender, typename sender_traits<Sender2>::template error_types<Variant>>;
+
 template <template <class...> class Tuple, template <class...> class Variant, class Sender,
           class... ValueTuples>
 using append_value_types =

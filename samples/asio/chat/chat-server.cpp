@@ -24,15 +24,31 @@
 #include <boost/asio.hpp>
 
 #include "chat_message.hpp"
+#include "p0443_v2/type_traits.hpp"
 
 namespace net = boost::asio;
 
 // Helper sender that will always set done
 struct always_done
 {
-    template <class Receiver>
-    void submit(Receiver &&recv) {
-        p0443_v2::set_done(std::forward<Receiver>(recv));
+    template<template<class...> class Tuple, template<class...> class Variant>
+    using value_types = Variant<Tuple<>>;
+
+    template<template<class...> class Variant>
+    using error_types = Variant<std::exception_ptr>;
+
+    static constexpr bool sends_done = true;
+
+    template<class Receiver>
+    auto connect(Receiver&& rx) {
+        struct operation
+        {
+            p0443_v2::remove_cvref_t<Receiver> rx_;
+            void start() {
+                p0443_v2::set_done(std::move(rx_));
+            }
+        };
+        return operation{std::forward<Receiver>(rx)};
     }
 };
 
@@ -119,7 +135,7 @@ struct chat_room
                                    });
 
         return p0443_v2::handle_done(std::move(message_reader), std::move(participant_remover));
-    }ö
+    }
 
 private:
     std::vector<chat_participant *> participants_;
