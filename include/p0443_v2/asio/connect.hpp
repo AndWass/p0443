@@ -10,7 +10,7 @@
 #include <vector>
 #include <variant>
 
-#include <boost/asio/connect.hpp>
+#include <boost/type_traits/is_detected.hpp>
 #include <boost/asio/ip/basic_endpoint.hpp>
 #include <boost/asio/ip/basic_resolver_results.hpp>
 
@@ -20,12 +20,39 @@
 
 namespace p0443_v2::asio
 {
-template <class Protocol, class Executor>
+namespace detail
+{
+void async_connect();
+
+struct connect_socket_cpo
+{
+    template<class Socket, class...Args>
+    using member_detector = decltype(std::declval<Socket>().async_connect(std::declval<Args>()...));
+
+    template<class Socket, class...Args>
+    using use_member = boost::is_detected<member_detector, Socket, Args...>;
+
+    template<class Socket, class...Args>
+    auto operator()(Socket& sock, Args&&...args) const
+    {
+        if constexpr(use_member<Socket, Args...>::value)
+        {
+            return sock.async_connect(std::forward<Args>(args)...);
+        }
+        else {
+            return async_connect(sock, std::forward<Args>(args)...);
+        }
+    }
+};
+static constexpr connect_socket_cpo connect_socket_impl;
+}
+template <class Stream>
 struct connect_socket
 {
-    using socket_type = boost::asio::basic_socket<Protocol, Executor>;
-    using endpoint_type = boost::asio::ip::basic_endpoint<Protocol>;
-    using resolver_results = boost::asio::ip::basic_resolver_results<Protocol>;
+    using socket_type = Stream;
+    using protocol_type = typename Stream::protocol_type;
+    using endpoint_type = boost::asio::ip::basic_endpoint<protocol_type>;
+    using resolver_results = boost::asio::ip::basic_resolver_results<protocol_type>;
     socket_type *socket_;
     struct endpoint_range
     {
@@ -42,10 +69,10 @@ struct connect_socket
 
     static constexpr bool sends_done = true;
 
-    connect_socket(boost::asio::basic_socket<Protocol, Executor> &socket, resolver_results &resolve_results):
+    connect_socket(Stream &socket, resolver_results &resolve_results):
         socket_(&socket), endpoints_{&resolve_results} {}
 
-    connect_socket(boost::asio::basic_socket<Protocol, Executor> &socket, endpoint_type &begin):
+    connect_socket(Stream &socket, endpoint_type &begin):
         socket_(&socket), endpoints_(endpoint_range{&begin, (&begin)+1}) {}
 
     template<class Receiver>
@@ -68,7 +95,7 @@ struct connect_socket
         {
             endpoint_range ep = std::get<0>(endpoints_);
             if(ep.begin_) {
-                boost::asio::async_connect(*socket_, ep.begin_, ep.end_,
+                detail::connect_socket_impl(*socket_, ep.begin_, ep.end_,
                                             [end = ep.end_, receiver = std::move(receiver_)](const auto &ec, const auto ep) mutable {
                                                 if (ep == end) {
                                                     p0443_v2::set_done(std::move(receiver));
@@ -86,7 +113,7 @@ struct connect_socket
         {
             const resolver_results* ep = std::get<1>(endpoints_);
             if(ep) {
-                boost::asio::async_connect(*socket_, *ep,
+                detail::connect_socket_impl(*socket_, *ep,
                                             [receiver = std::move(receiver_)](const auto &ec, const auto& ep) mutable {
                                                 if (ep == endpoint_type()) {
                                                     p0443_v2::set_done(std::move(receiver));
@@ -112,7 +139,7 @@ private:
     {
         endpoint_range ep = std::get<0>(endpoints_);
         if(ep.begin_) {
-            boost::asio::async_connect(*socket_, ep.begin_, ep.end_,
+            detail::connect_socket_impl(*socket_, ep.begin_, ep.end_,
                                         [end = ep.end_, receiver](const auto &ec, const auto ep) mutable {
                                             if (ep == end) {
                                                 p0443_v2::set_done(receiver);
@@ -132,7 +159,7 @@ private:
     {
         const resolver_results* ep = std::get<1>(endpoints_);
         if(ep) {
-            boost::asio::async_connect(*socket_, *ep,
+            detail::connect_socket_impl(*socket_, *ep,
                                         [receiver](const auto &ec, const auto& ep) mutable {
                                             if (ep == endpoint_type()) {
                                                 p0443_v2::set_done(receiver);

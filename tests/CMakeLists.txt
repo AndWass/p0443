@@ -14,6 +14,7 @@ set(sources
     v2/just.cpp
     v2/sender_traits.cpp
     v2/sequence.cpp
+    v2/beast_ws.cpp
 )
 
 if(P0443_BUILD_CORO_TESTS)
