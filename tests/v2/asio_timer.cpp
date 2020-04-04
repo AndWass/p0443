@@ -27,6 +27,22 @@ TEST_CASE("asio timer: duration timer timeout") {
     REQUIRE(diff > 50);
 }
 
+TEST_CASE("asio timer: submit timer with timeout") {
+    boost::asio::io_context io;
+    boost::asio::steady_timer timer(io);
+    bool timeout = false;
+        p0443_v2::submit(p0443_v2::asio::timer::wait_for(timer, std::chrono::milliseconds(100)),
+                          p0443_v2::value_channel([&]() { timeout = true; }));
+    REQUIRE(!timeout);
+    auto now = std::chrono::steady_clock::now();
+    io.run();
+    auto now2 = std::chrono::steady_clock::now();
+    REQUIRE(timeout);
+    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(now2 - now).count();
+    REQUIRE(diff > 50);
+}
+
+
 TEST_CASE("asio timer: timepoint timer timeout") {
     boost::asio::io_context io;
     boost::asio::steady_timer timer(io);

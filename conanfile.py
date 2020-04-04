@@ -2,11 +2,13 @@ from conans import ConanFile, CMake, tools
 
 class P0443Conan(ConanFile):
     name = "p0443"
+    requires = ["boost/[>=1.72]"]
+    
     options = {"build_tests": [True, False]}
     default_options = {"build_tests": False}
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
-    version = "0.0.4j"
+    version = "0.0.4k"
     license = "BSL-1.0"
     exports_sources = "include/*", "LICENSE"
     no_copy_source = True
@@ -14,7 +16,6 @@ class P0443Conan(ConanFile):
     def requirements(self):
         if self.options.build_tests:
             self.requires("doctest/2.3.5")
-            self.requires("boost/[>=1.71]@conan/stable")
             self.generators.append("cmake")
 
     def package(self):

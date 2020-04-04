@@ -28,6 +28,8 @@ install(
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
+
 if(P0443_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
