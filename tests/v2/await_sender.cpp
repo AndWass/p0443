@@ -14,7 +14,7 @@
 TEST_CASE("await_sender: just()") {
     bool called = false;
     auto task_test = [&]() -> immediate_task {
-        co_await p0443_v2::await_sender(p0443_v2::just());
+        co_await p0443_v2::just();
         called = true;
     };
     auto test = task_test();
@@ -24,7 +24,7 @@ TEST_CASE("await_sender: just()") {
 TEST_CASE("await_sender: just(int)") {
     bool called = false;
     auto task_test = [&]() -> immediate_task {
-        auto val = co_await p0443_v2::await_sender(p0443_v2::just(10));
+        auto val = co_await p0443_v2::just(10);
         called = true;
         REQUIRE_EQ(val, 10);
     };
@@ -35,7 +35,7 @@ TEST_CASE("await_sender: just(int)") {
 TEST_CASE("await_sender: just(int, bool)") {
     bool called = false;
     auto task_test = [&]() -> immediate_task {
-        auto [val, boolean] = co_await p0443_v2::await_sender(p0443_v2::just(10, true));
+        auto [val, boolean] = co_await p0443_v2::just(10, true);
         called = true;
         REQUIRE_EQ(val, 10);
         REQUIRE(boolean);

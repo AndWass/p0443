@@ -47,7 +47,7 @@ struct await_sender
         typename sender_traits<Sender>::template flattened_value_type<std::tuple, std::variant>;
     using error_storage = typename sender_traits<Sender>::template error_types<std::variant>;
 
-    template<class ValueStorage>
+    template <class ValueStorage>
     struct awaitable_base
     {
         struct awaitable_receiver
@@ -118,14 +118,16 @@ struct await_sender
         };
 
         bool await_suspend(stdcoro::coroutine_handle<> suspended_coro) {
-            stored_operation_.emplace(p0443_v2::connect(std::move(sender_), awaitable_receiver(this)));
+            stored_operation_.emplace(
+                p0443_v2::connect(std::move(sender_), awaitable_receiver(this)));
             p0443_v2::start(*stored_operation_);
             return try_set_continuation(suspended_coro);
         }
     };
 
-    template<class S, class = typename p0443_v2::sender_traits<S>::template value_types<std::tuple, std::variant>>
-    struct awaitable: awaitable_base<value_storage>
+    template <class S, class = typename p0443_v2::sender_traits<S>::template value_types<
+                           std::tuple, std::variant>>
+    struct awaitable : awaitable_base<value_storage>
     {
         using typename awaitable_base<value_storage>::error_visitor;
         using awaitable_base<value_storage>::awaitable_base;
@@ -140,8 +142,8 @@ struct await_sender
         }
     };
 
-    template<class S>
-    struct awaitable<S, std::variant<std::tuple<>>>: awaitable_base<std::monostate>
+    template <class S>
+    struct awaitable<S, std::variant<std::tuple<>>> : awaitable_base<std::monostate>
     {
         using awaitable_base<std::monostate>::awaitable_base;
         void await_resume() {
@@ -149,21 +151,27 @@ struct await_sender
                 throw await_done_result();
             }
             else if (this->values_.index() == 2) {
-                std::visit(typename awaitable_base<std::monostate>::error_visitor{}, std::get<2>(this->values_));
+                std::visit(typename awaitable_base<std::monostate>::error_visitor{},
+                           std::get<2>(this->values_));
             }
         }
     };
 
-
     Sender sender_;
 
-    await_sender(Sender &&sender) : sender_(std::move(sender)) {
+    await_sender(Sender &&sender) : sender_(std::forward<Sender>(sender)) {
     }
 
     auto operator co_await() {
         return awaitable<Sender>(std::move(sender_));
     }
 };
+
+template <class T>
+auto operator co_await(T &&t) {
+    return typename await_sender<p0443_v2::remove_cvref_t<T>>::template awaitable<
+        p0443_v2::remove_cvref_t<T>>(std::forward<T>(t));
+}
 } // namespace detail
 inline constexpr struct await_sender_cpo
 {
@@ -172,4 +180,7 @@ inline constexpr struct await_sender_cpo
         return detail::await_sender<p0443_v2::remove_cvref_t<Sender>>(std::forward<Sender>(sender));
     }
 } await_sender;
+
+using detail::operator co_await;
+
 } // namespace p0443_v2
