@@ -166,13 +166,14 @@ struct await_sender
         return awaitable<Sender>(std::move(sender_));
     }
 };
-
-template <class T>
-auto operator co_await(T &&t) {
-    return typename await_sender<p0443_v2::remove_cvref_t<T>>::template awaitable<
-        p0443_v2::remove_cvref_t<T>>(std::forward<T>(t));
-}
 } // namespace detail
+
+template <class Sender>
+auto awaitable_for(Sender &&sender) {
+    using sender_t = p0443_v2::remove_cvref_t<Sender>;
+    return typename detail::await_sender<sender_t>::template awaitable<sender_t>(std::forward<Sender>(sender));
+}
+
 inline constexpr struct await_sender_cpo
 {
     template <class Sender>
@@ -181,6 +182,23 @@ inline constexpr struct await_sender_cpo
     }
 } await_sender;
 
+namespace detail
+{
+template <class T>
+auto operator co_await(T &&t) {
+    return ::p0443_v2::awaitable_for(std::forward<T>(t));
+}
+} // namespace detail
+
 using detail::operator co_await;
+
+namespace asio
+{
+namespace detail
+{
+using p0443_v2::operator co_await;
+}
+using detail::operator co_await;
+} // namespace asio
 
 } // namespace p0443_v2

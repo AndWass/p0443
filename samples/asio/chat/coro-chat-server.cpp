@@ -62,7 +62,7 @@ private:
             while (!deliver_queue_.empty()) {
                 auto next = deliver_queue_.front();
                 deliver_queue_.pop_front();
-                co_await p0443_v2::await_sender(next.deliver(socket_));
+                co_await next.deliver(socket_);
             }
         }
         catch (...) {
@@ -121,7 +121,7 @@ p0443_v2::immediate_task participant_task(net::ip::tcp::socket socket, chat_room
     room.add_participant(participant);
     try {
         while(true) {
-            co_await p0443_v2::await_sender(participant.read_message());
+            co_await participant.read_message();
             room.new_message(participant, participant.read_message_);
         }
     }
@@ -141,7 +141,7 @@ p0443_v2::immediate_task room_task(net::io_context &io, std::uint16_t port) {
         printf("Listening on port %u\n", unsigned(port));
         chat_room room;
         while (true) {
-            auto socket = co_await p0443_v2::await_sender(p0443_v2::asio::accept(acceptor));
+            auto socket = co_await p0443_v2::asio::accept(acceptor);
             participant_task(std::move(socket), room);
         }
     }

@@ -57,55 +57,71 @@ struct when_any_op
     template<class Receiver>
     struct operation_state
     {
+        struct shared_state;
         struct op_receiver
         {
-            operation_state* owner_;
+            std::shared_ptr<shared_state> state_;
             template<class...Values>
             void set_value(Values&&...values)
             {
-                if(owner_->next_) {
+                if(state_->next_) {
                     try {
-                        p0443_v2::set_value(*owner_->next_, std::forward<Values>(values)...);
-                        owner_->next_.reset();
+                        p0443_v2::set_value(*state_->next_, std::forward<Values>(values)...);
+                        state_->next_.reset();
                     }
                     catch(...) {
-                        p0443_v2::set_error(*owner_->next_, std::current_exception());
+                        p0443_v2::set_error(*state_->next_, std::current_exception());
                     }
                 }
+                state_.reset();
             }
 
             template<class E>
             void set_error(E &&e) {
-                if(owner_->next_) {
-                    p0443_v2::set_error(*owner_->next_, std::forward<E>(e));
-                    owner_->next_.reset();
+                if(state_->next_) {
+                    p0443_v2::set_error(*state_->next_, std::forward<E>(e));
+                    state_->next_.reset();
                 }
+                state_.reset();
             }
 
             void set_done() noexcept {
-                if(owner_->next_) {
-                    p0443_v2::set_done(*owner_->next_);
-                    owner_->next_.reset();
+                if(state_->next_) {
+                    p0443_v2::set_done(*state_->next_);
+                    state_->next_.reset();
                 }
+                state_.reset();
             }
         };
         using operation_storage = std::tuple<p0443_v2::operation_type<Senders, op_receiver>...>;
+
         senders_storage senders_;
-        std::optional<Receiver> next_;
-        std::optional<operation_storage> op_storage_;
+
+        struct shared_state
+        {
+            std::optional<Receiver> next_;
+            std::optional<operation_storage> op_storage_;
+
+            shared_state(Receiver&& recv): next_(std::move(recv)) {}
+        };
+
+        std::shared_ptr<shared_state> state_;
+
+
 
         template<class Rx>
-        operation_state(senders_storage&& senders, Rx&& receiver): senders_(std::move(senders)), next_(std::forward<Rx>(receiver)) {}
+        operation_state(senders_storage&& senders, Rx&& receiver): senders_(std::move(senders)),
+            state_(std::make_unique<shared_state>(std::forward<Rx>(receiver))) {}
 
         void start() {
             auto sender_to_op = [this](auto&&...senders) {
                 return operation_storage{
-                    p0443_v2::connect(std::forward<decltype(senders)>(senders), op_receiver{this})...
+                    p0443_v2::connect(std::forward<decltype(senders)>(senders), op_receiver{state_})...
                 };
             };
             
-            op_storage_.emplace(std::apply(sender_to_op, std::move(senders_)));
-            boost::mp11::tuple_for_each(*op_storage_, [](auto &op) {
+            state_->op_storage_.emplace(std::apply(sender_to_op, std::move(senders_)));
+            boost::mp11::tuple_for_each(*state_->op_storage_, [](auto &op) {
                 p0443_v2::start(op);
             });
         }

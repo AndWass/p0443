@@ -36,7 +36,7 @@ private:
         try {
             while(true) {
                 chat_message message_to_read;
-                co_await p0443_v2::await_sender(message_to_read.read(socket_));
+                co_await message_to_read.read(socket_);
                 std::cout << message_to_read.message_ << std::endl;
             }
         }
@@ -53,7 +53,7 @@ private:
                 {
                     auto to_send = std::move(send_queue_.front());
                     send_queue_.erase(send_queue_.begin());
-                    co_await p0443_v2::await_sender(to_send.deliver(socket_));
+                    co_await to_send.deliver(socket_);
                 }
                 is_writing_ = false;
             }

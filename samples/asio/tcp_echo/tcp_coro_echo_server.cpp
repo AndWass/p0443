@@ -28,9 +28,9 @@ p0443_v2::immediate_task client_task(net::tcp::socket socket) {
     {
         std::array<std::uint8_t, 128> buffer;
         while(true) {
-            auto amount_read = co_await p0443_v2::await_sender(p0443_v2::asio::read_some(socket, boost::asio::buffer(buffer)));
+            auto amount_read = co_await p0443_v2::asio::read_some(socket, boost::asio::buffer(buffer));
             std::cout << "Read " << amount_read << std::endl;
-            co_await p0443_v2::await_sender(p0443_v2::asio::write_all(socket, boost::asio::buffer(buffer.data(), amount_read)));
+            co_await p0443_v2::asio::write_all(socket, boost::asio::buffer(buffer.data(), amount_read));
         }
     }
     catch(p0443_v2::await_done_result&) {
@@ -47,7 +47,7 @@ p0443_v2::immediate_task server_task(boost::asio::io_context &io, std::uint16_t 
     port = acceptor.local_endpoint().port();
     std::cout << "Starting to listen on port " << port << "\n";
     while (true) {
-        auto socket = co_await p0443_v2::await_sender(p0443_v2::asio::accept(acceptor));
+        auto socket = co_await p0443_v2::asio::accept(acceptor);
         client_task(std::move(socket));
     }
 }

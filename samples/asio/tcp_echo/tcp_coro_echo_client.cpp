@@ -29,12 +29,12 @@ p0443_v2::immediate_task client_task(boost::asio::io_context &io, std::string_vi
                                      std::string_view port, std::string to_send) {
     try
     {
-        auto eps = co_await p0443_v2::await_sender(p0443_v2::asio::resolve(io, host, port));
+        auto eps = co_await p0443_v2::asio::resolve(io, host, port);
         net::tcp::socket socket(io);
-        auto actual_ep = co_await p0443_v2::await_sender(p0443_v2::asio::connect_socket(socket, eps));
+        auto actual_ep = co_await p0443_v2::asio::connect_socket(socket, eps);
         std::cout << "Connected to " << actual_ep.address().to_string() << ":" << actual_ep.port() << "\n";
-        co_await p0443_v2::await_sender(p0443_v2::asio::write_all(socket, boost::asio::buffer(to_send)));
-        auto amount_read = co_await p0443_v2::await_sender(p0443_v2::asio::read_all(socket, boost::asio::buffer(to_send)));
+        co_await p0443_v2::asio::write_all(socket, boost::asio::buffer(to_send));
+        auto amount_read = co_await p0443_v2::asio::read_all(socket, boost::asio::buffer(to_send));
         to_send.resize(amount_read);
         std::cout << "Response = '" << to_send << "'\n";
     }

@@ -43,13 +43,15 @@ TEST_CASE("asio_coro: resolve and connect to google") {
 
     boost::asio::io_context io;
     bool done = false;
-    [&]() -> immediate_task {
+    auto task = [&]() -> immediate_task {
         auto result = co_await p0443_v2::await_sender(p0443_v2::asio::resolve(io, "www.google.se", "https"));
         tcp::socket socket(io);
         auto ep = co_await p0443_v2::await_sender(p0443_v2::asio::connect_socket(socket, result));
         REQUIRE(ep.port() == 443);
         done = true;
-    }();
+    };
+
+    task();
 
     io.run();
     REQUIRE(done);

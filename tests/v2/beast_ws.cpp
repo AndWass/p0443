@@ -14,7 +14,7 @@
 #include <p0443_v2/sequence.hpp>
 #include <p0443_v2/submit.hpp>
 
-TEST_CASE("beast ws connect and handshake") {
+/*TEST_CASE("beast ws connect and handshake") {
     boost::asio::io_context ioc;
     boost::asio::ip::tcp::resolver resolver(ioc);
     auto resolve_result = resolver.resolve("demos.kaazing.com", "80");
@@ -55,4 +55,4 @@ TEST_CASE("beast ws write and read some") {
 
     ioc.run();
     REQUIRE(connect_handshake);
-}
+}*/
