@@ -22,6 +22,7 @@ namespace stdcoro = std::experimental;
 #error "Support for coroutines not detected"
 #endif
 
+#include <p0443_v2/sink_receiver.hpp>
 #include <p0443_v2/connect.hpp>
 #include <p0443_v2/sender_traits.hpp>
 #include <p0443_v2/start.hpp>
@@ -181,24 +182,9 @@ inline constexpr struct await_sender_cpo
         return detail::await_sender<p0443_v2::remove_cvref_t<Sender>>(std::forward<Sender>(sender));
     }
 } await_sender;
+} // namespace p0443_v2
 
-namespace detail
-{
-template <class T>
+template<class T, class = decltype(p0443_v2::connect(std::declval<T>(), std::declval<p0443_v2::sink_receiver>()))>
 auto operator co_await(T &&t) {
     return ::p0443_v2::awaitable_for(std::forward<T>(t));
 }
-} // namespace detail
-
-using detail::operator co_await;
-
-namespace asio
-{
-namespace detail
-{
-using p0443_v2::operator co_await;
-}
-using detail::operator co_await;
-} // namespace asio
-
-} // namespace p0443_v2
