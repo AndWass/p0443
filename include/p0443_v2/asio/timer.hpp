@@ -66,28 +66,30 @@ namespace timer
             : timer_(&timer), duration_(dur) {
         }
 
+        template<class Receiver>
+        struct operation
+        {
+            timer_type *timer_;
+            duration duration_;
+            Receiver receiver_;
+
+            void start() {
+                timer_->expires_after(duration_);
+                timer_->async_wait(
+                    [rx = std::move(receiver_)](const boost::system::error_code &ec) mutable {
+                        if (ec == boost::asio::error::operation_aborted) {
+                            p0443_v2::set_done(std::move(rx));
+                        }
+                        else {
+                            p0443_v2::set_value(std::move(rx));
+                        }
+                    });
+            }
+        };
+
         template <class Receiver>
         auto connect(Receiver &&receiver) {
-            struct operation
-            {
-                timer_type *timer_;
-                duration duration_;
-                p0443_v2::remove_cvref_t<Receiver> receiver_;
-
-                void start() {
-                    timer_->expires_after(duration_);
-                    timer_->async_wait(
-                        [rx = std::move(receiver_)](const boost::system::error_code &ec) mutable {
-                            if (ec == boost::asio::error::operation_aborted) {
-                                p0443_v2::set_done(std::move(rx));
-                            }
-                            else {
-                                p0443_v2::set_value(std::move(rx));
-                            }
-                        });
-                }
-            };
-            return operation{timer_, duration_, std::forward<Receiver>(receiver)};
+            return operation<p0443_v2::remove_cvref_t<Receiver>>{timer_, duration_, std::forward<Receiver>(receiver)};
         }
     };
 };

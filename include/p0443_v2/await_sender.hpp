@@ -172,7 +172,7 @@ struct await_sender
 template <class Sender>
 auto awaitable_for(Sender &&sender) {
     using sender_t = p0443_v2::remove_cvref_t<Sender>;
-    return typename detail::await_sender<sender_t>::template awaitable<sender_t>(std::forward<Sender>(sender));
+    return typename detail::await_sender<sender_t>::template awaitable<sender_t>(std::move(sender));
 }
 
 inline constexpr struct await_sender_cpo

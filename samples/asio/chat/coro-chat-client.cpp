@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
-#include <string_view>
+#include <boost/utility/string_view.hpp>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -72,12 +72,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::string_view host = argv[1];
-    std::string_view port = argv[2];
+    boost::string_view host = argv[1];
+    boost::string_view port = argv[2];
 
     net::io_context io;
     net::ip::tcp::resolver resolver(io);
-    auto resolve_results = resolver.resolve(net::ip::tcp::v4(), host, port);
+    auto resolve_results = resolver.resolve(net::ip::tcp::v4(), {host.data(), host.size()}, {port.data(), port.size()});
     net::ip::tcp::socket socket(io);
     
     for (auto &r : resolve_results) {

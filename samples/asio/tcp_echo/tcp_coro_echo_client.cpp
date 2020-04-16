@@ -25,8 +25,8 @@
 
 namespace net = boost::asio::ip;
 
-p0443_v2::immediate_task client_task(boost::asio::io_context &io, std::string_view host,
-                                     std::string_view port, std::string to_send) {
+p0443_v2::immediate_task client_task(boost::asio::io_context &io, boost::string_view host,
+                                     boost::string_view port, std::string to_send) {
     try
     {
         auto eps = co_await p0443_v2::asio::resolve(io, host, port);

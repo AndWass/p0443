@@ -7,6 +7,7 @@
 #pragma once
 
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/utility/string_view.hpp>
 #include <string>
 
 #include <p0443_v2/set_done.hpp>
@@ -66,7 +67,7 @@ struct resolve
 
     resolve() = default;
 
-    resolve(ExecutionContext &context, std::string_view host, std::string_view service)
+    resolve(ExecutionContext &context, boost::string_view host, boost::string_view service)
         : context_(&context), host_(host), service_(service) {
     }
 
