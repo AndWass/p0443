@@ -24,6 +24,14 @@ namespace timer
         timer_type *timer_;
         time_point expiration_time_;
 
+        template<template<class...> class Tuple, template<class...> class Variant>
+        using value_types = Variant<Tuple<>>;
+
+        template<template<class...> class Variant>
+        using error_types = Variant<std::exception_ptr>;
+
+        static constexpr bool sends_done = true;
+
         template <class Receiver>
         auto connect(Receiver &&receiver) {
             struct operation
@@ -58,6 +66,14 @@ namespace timer
     {
         using timer_type = TimerType;
         using duration = typename timer_type::duration;
+
+        template<template<class...> class Tuple, template<class...> class Variant>
+        using value_types = Variant<Tuple<>>;
+
+        template<template<class...> class Variant>
+        using error_types = Variant<std::exception_ptr>;
+
+        static constexpr bool sends_done = true;
 
         timer_type *timer_;
         duration duration_;
