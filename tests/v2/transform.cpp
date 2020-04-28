@@ -1,4 +1,3 @@
-#include <p0443/immediate_executor.hpp>
 #include <p0443_v2/just.hpp>
 #include <p0443_v2/transform.hpp>
 #include <p0443_v2/when_all.hpp>
