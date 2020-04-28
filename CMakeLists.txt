@@ -5,7 +5,6 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
 add_library(p0443 INTERFACE)
-target_compile_features(p0443 INTERFACE cxx_std_17)
 
 include(GNUInstallDirs)
 

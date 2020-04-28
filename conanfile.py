@@ -8,7 +8,7 @@ class P0443Conan(ConanFile):
     default_options = {"build_tests": False}
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
-    version = "0.0.9"
+    version = "0.0.10"
     license = "BSL-1.0"
     exports_sources = "include/*", "LICENSE"
     no_copy_source = True
