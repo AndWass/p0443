@@ -46,6 +46,15 @@ struct connect_socket_cpo
 };
 static constexpr connect_socket_cpo connect_socket_impl;
 }
+/**
+ * @brief Connects a socket to an endpoint.
+ *
+ * The socket must live for the duration of this operation.
+ *
+ * Sender value: nete::basic_endpoint<Stream::protocol_type>
+ * Sender error: std::exception_ptr
+ * Sender sets done: Yes
+ */
 template <class Stream>
 struct connect_socket
 {

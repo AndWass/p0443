@@ -14,6 +14,16 @@
 namespace p0443_v2::asio
 {
 namespace net = boost::asio::ip;
+/**
+ * @brief Perform an asio tcp accept
+ *
+ * This sender starts an async accept on the supplied asio acceptor.
+ * The acceptor must life for the duration of this operation.
+ *
+ * Sender value: boost::asio::tcp::socket
+ * Sender error: std::exception_ptr
+ * Sender sets done: Yes
+ */
 struct accept
 {
     template<template<class...> class Tuple, template<class...> class Variant>
